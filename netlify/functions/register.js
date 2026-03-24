@@ -1,4 +1,4 @@
-// netlify/functions/login.js
+// netlify/functions/register.js
 const connectDB = require('./utils/db');
 const User = require('./models/user.model');
 const crypto = require('crypto');
@@ -29,9 +29,9 @@ exports.handler = async (event) => {
     }
 
     try {
-        const { email, password } = JSON.parse(event.body || '{}');
+        const { name, email, password } = JSON.parse(event.body || '{}');
 
-        if (!email || !password) {
+        if (!name || !email || !password) {
             return {
                 statusCode: 400,
                 headers,
@@ -41,27 +41,35 @@ exports.handler = async (event) => {
 
         await connectDB();
 
-        const user = await User.findOne({ email: email.toLowerCase() });
+        const existingUser = await User.findOne({ email: email.toLowerCase() });
 
-        if (!user || user.passwordHash !== hashPassword(password)) {
+        if (existingUser) {
             return {
-                statusCode: 401,
+                statusCode: 409, // Conflict
                 headers,
-                body: JSON.stringify({ message: 'Invalid email or password.' })
+                body: JSON.stringify({ message: 'An account with this email already exists.' })
             };
         }
 
+        const newUser = new User({
+            name,
+            email: email.toLowerCase(),
+            passwordHash: hashPassword(password),
+        });
+
+        await newUser.save();
+
         return {
-            statusCode: 200,
+            statusCode: 201, // Created
             headers,
             body: JSON.stringify({
-                message: 'Welcome back!',
-                user: { id: user._id, name: user.name, email: user.email }
+                message: 'Account created successfully!',
+                user: { id: newUser._id, name: newUser.name, email: newUser.email }
             })
         };
 
     } catch (err) {
-        console.error('Login error:', err);
+        console.error('Register error:', err);
         return {
             statusCode: 500,
             headers,
