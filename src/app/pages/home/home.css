@@ -56,61 +56,66 @@
     z-index: 1;
 }
 
-/* Floating photo boxes */
+/* Floating photo boxes — grid layout prevents overlap at all viewports */
 .th-hero__photos {
     position: absolute;
-    inset: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    /* occupy the right ~52% so it never tramples hero text */
+    width: min(52%, 700px);
     z-index: 0;
     pointer-events: none;
+
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 10px;
+    padding: 72px 20px 20px 10px;
+    /* top-pad clears the navbar */
 }
 
 .th-photo {
-    position: absolute;
+    position: relative;
+    /* normal grid flow — no overlap possible */
     overflow: hidden;
     border-radius: 4px;
+    min-height: 0;
+    /* lets grid cells shrink correctly */
+    box-shadow: 0 20px 52px rgba(0, 0, 0, 0.5);
 }
 
 .th-photo img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    opacity: 0.45;
-    filter: grayscale(20%) contrast(1.05);
+    opacity: 0.65;
+    filter: grayscale(15%) contrast(1.08);
+    transition: opacity 0.4s ease;
 }
 
+.th-photo:hover img {
+    opacity: 0.85;
+}
+
+/* Individual rotations + floats — purely decorative, no positioning */
 .th-photo--1 {
-    width: clamp(160px, 18vw, 260px);
-    height: clamp(200px, 24vw, 340px);
-    top: 8%;
-    right: 4%;
-    transform: rotate(2.5deg);
+    transform: rotate(1.5deg);
     animation: th-float-1 6s ease-in-out infinite;
 }
 
 .th-photo--2 {
-    width: clamp(120px, 14vw, 200px);
-    height: clamp(150px, 18vw, 260px);
-    top: 18%;
-    right: 22%;
-    transform: rotate(-3deg);
+    transform: rotate(-2deg);
     animation: th-float-2 7.5s ease-in-out infinite;
 }
 
 .th-photo--3 {
-    width: clamp(100px, 11vw, 180px);
-    height: clamp(130px, 14vw, 220px);
-    bottom: 12%;
-    right: 8%;
-    transform: rotate(1.5deg);
+    transform: rotate(-1.5deg);
     animation: th-float-3 5.5s ease-in-out infinite;
 }
 
 .th-photo--4 {
-    width: clamp(140px, 15vw, 220px);
-    height: clamp(170px, 20vw, 300px);
-    bottom: 8%;
-    right: 28%;
-    transform: rotate(-2deg);
+    transform: rotate(1.8deg);
     animation: th-float-1 8s ease-in-out infinite reverse;
 }
 
@@ -867,12 +872,22 @@
 /* ── RESPONSIVE ───────────────────────────────────────────── */
 @media (max-width: 900px) {
     .th-hero__photos {
-        opacity: 0.3;
+        width: 100%;
+        /* full width but behind text */
+        opacity: 0.25;
+        grid-template-columns: 1fr 1fr;
+        padding: 60px 12px 12px;
+        gap: 8px;
     }
 
     .th-photo--2,
     .th-photo--4 {
         display: none;
+        /* keep only 2 photos on mid-size */
+    }
+
+    .th-hero__photos {
+        grid-template-columns: 1fr;
     }
 
     .th-newsletter__inner {
