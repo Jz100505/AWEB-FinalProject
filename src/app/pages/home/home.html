@@ -11,16 +11,16 @@
         <!-- Floating photo boxes (decorative, z-index: -1) -->
         <div class="th-hero__photos" aria-hidden="true">
             <div class="th-photo th-photo--1">
-                <img src="/assets/images/hero-1.jpg" alt="" loading="eager" />
+                <img src="/assets/images/hero_main_editorial.webp" alt="" loading="eager" />
             </div>
             <div class="th-photo th-photo--2">
-                <img src="/assets/images/hero-2.jpg" alt="" loading="eager" />
+                <img src="/assets/images/hero_img_0.webp" alt="" loading="eager" />
             </div>
             <div class="th-photo th-photo--3">
-                <img src="/assets/images/hero-3.jpg" alt="" loading="eager" />
+                <img src="/assets/images/hero_img_1.webp" alt="" loading="eager" />
             </div>
             <div class="th-photo th-photo--4">
-                <img src="/assets/images/hero-4.jpg" alt="" loading="eager" />
+                <img src="/assets/images/home_split_a.webp" alt="" loading="eager" />
             </div>
         </div>
 
@@ -162,7 +162,7 @@
                 @for (product of featuredProducts; track trackByProduct($index, product)) {
                 <article class="th-product-card" [routerLink]="['/product', product._id]">
                     <div class="th-product-card__img-wrap">
-                        <img [src]="product.images[0] ? '/assets/images/' + product.images[0] : '/assets/images/placeholder.jpg'" [alt]="product.name"
+                        <img [src]="product.images[0] ? '/assets/images/' + product.images[0] : '/assets/images/hero_main_editorial.webp'" [alt]="product.name"
                             class="th-product-card__img" loading="lazy" />
                         <span class="th-product-card__condition">{{ product.condition }}</span>
                     </div>
