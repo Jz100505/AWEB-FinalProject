@@ -1,0 +1,18 @@
+/* ============================================================
+   APP SHELL — ThriftHub
+   ============================================================ */
+
+.app-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: var(--bg-main);
+}
+
+/* Pushes content below the fixed navbar */
+.app-main {
+    flex: 1;
+    padding-top: var(--navbar-height);
+    display: flex;
+    flex-direction: column;
+}

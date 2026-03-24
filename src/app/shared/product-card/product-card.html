@@ -1,0 +1,91 @@
+<article class="product-card" [class.out-of-stock]="!product.inStock"
+    [attr.aria-label]="product.name + ', ' + (product.inStock ? 'Available' : 'Out of stock') + ', ₱' + product.price"
+    role="article">
+
+    <!-- Image Container -->
+    <div class="product-card__image-wrap" (click)="onViewDetail()">
+
+        <!-- Product Image -->
+        <img [src]="product.imageUrl || 'assets/images/placeholder.jpg'" [alt]="product.name"
+            class="product-card__image" loading="lazy" width="300" height="400" (error)="onImageError($event)" />
+
+        <!-- Out of Stock Overlay -->
+        <div class="product-card__oos-overlay" *ngIf="!product.inStock" aria-hidden="true">
+            <span class="product-card__oos-label">Out of Stock</span>
+        </div>
+
+        <!-- Wishlist Button -->
+        <button class="product-card__wishlist" [class.active]="isWishlisted" (click)="onToggleWishlist($event)"
+            [attr.aria-label]="isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'"
+            [attr.aria-pressed]="isWishlisted" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                [attr.fill]="isWishlisted ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path
+                    d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+        </button>
+
+        <!-- Condition Badge -->
+        <span class="product-card__condition" [ngClass]="getConditionClass(product.condition)"
+            aria-label="Item condition: {{ product.condition }}">
+            {{ product.condition }}
+        </span>
+
+    </div>
+
+    <!-- Card Body -->
+    <div class="product-card__body">
+
+        <!-- Category -->
+        <span class="product-card__category">{{ product.category }}</span>
+
+        <!-- Name -->
+        <h3 class="product-card__name" (click)="onViewDetail()" title="{{ product.name }}">
+            {{ product.name }}
+        </h3>
+
+        <!-- Size & Price Row -->
+        <div class="product-card__meta">
+            <div class="product-card__size-wrap">
+                <span class="product-card__size-label">Size</span>
+                <span class="product-card__size">{{ product.size }}</span>
+            </div>
+            <span class="product-card__price" aria-label="Price: ₱{{ product.price }}">
+                ₱{{ product.price | number: '1.2-2' }}
+            </span>
+        </div>
+
+        <!-- Add to Cart Button -->
+        <button class="product-card__cta btn btn-primary btn-full" [disabled]="!product.inStock || isAddingToCart"
+            (click)="onAddToCart()"
+            [attr.aria-label]="product.inStock ? 'Add ' + product.name + ' to cart' : product.name + ' is out of stock'"
+            type="button">
+
+            <!-- Loading spinner -->
+            <span class="spinner" *ngIf="isAddingToCart" aria-hidden="true"></span>
+
+            <!-- Cart icon -->
+            <svg *ngIf="!isAddingToCart && !addedToCart" xmlns="http://www.w3.org/2000/svg" width="15" height="15"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                aria-hidden="true">
+                <circle cx="9" cy="21" r="1" />
+                <circle cx="20" cy="21" r="1" />
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+            </svg>
+
+            <!-- Check icon (added confirmation) -->
+            <svg *ngIf="addedToCart" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12" />
+            </svg>
+
+            <span>
+                {{ isAddingToCart ? 'Adding…' : addedToCart ? 'Added!' : product.inStock ? 'Add to Cart' : 'Out of
+                Stock' }}
+            </span>
+
+        </button>
+
+    </div>
+</article>
