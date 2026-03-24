@@ -1,19 +1,17 @@
 [build]
-  command   = "npm run build"
-  publish   = "dist/ThriftHub/browser"
+  publish = "dist/thrift-hub/browser"
+  command = "npm run build"
   functions = "netlify/functions"
 
-[build.environment]
-  NODE_VERSION = "20"
+[functions]
+  directory = "netlify/functions"
 
-# Route all /api/* calls to Netlify Functions
 [[redirects]]
-  from   = "/api/*"
-  to     = "/.netlify/functions/:splat"
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
   status = 200
 
-# SPA fallback — all other routes go to Angular
 [[redirects]]
-  from   = "/*"
-  to     = "/index.html"
+  from = "/*"
+  to = "/index.html"
   status = 200

@@ -1,14 +1,28 @@
-// netlify/functions/utils/db.js
 const mongoose = require('mongoose');
 
-let cached = null;
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI) {
+    throw new Error('MONGODB_URI is not defined in environment variables');
+}
+
+let cached = global._mongooseCache;
+
+if (!cached) {
+    cached = global._mongooseCache = { conn: null, promise: null };
+}
 
 async function connectDB() {
-    if (cached && mongoose.connection.readyState === 1) {
-        return cached;
+    if (cached.conn) {
+        return cached.conn;
     }
-    cached = await mongoose.connect(process.env.MONGODB_URI);
-    return cached;
+
+    if (!cached.promise) {
+        cached.promise = mongoose.connect(MONGODB_URI).then((mongoose) => mongoose);
+    }
+
+    cached.conn = await cached.promise;
+    return cached.conn;
 }
 
 module.exports = connectDB;

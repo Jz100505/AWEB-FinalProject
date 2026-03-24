@@ -2,7 +2,7 @@
 <div class="app-shell">
 
   <!-- Global Navbar -->
-  <app-navbar></app-navbar>
+  <app-navbar *ngIf="showNav"></app-navbar>
 
   <!-- Main Content — router pages render here -->
   <main class="app-main" id="main-content" role="main">
@@ -10,6 +10,6 @@
   </main>
 
   <!-- Global Footer -->
-  <app-footer></app-footer>
+  <app-footer *ngIf="showNav"></app-footer>
 
 </div>

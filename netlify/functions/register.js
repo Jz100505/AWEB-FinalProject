@@ -1,79 +1,58 @@
-// netlify/functions/register.js
 const connectDB = require('./utils/db');
 const User = require('./models/user.model');
-const crypto = require('crypto');
-
-const SALT = 'thrifthub_salt_6aweb_2026';
-
-function hashPassword(password) {
-    return crypto
-        .createHash('sha256')
-        .update(password + SALT)
-        .digest('hex');
-}
-
-const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json'
-};
+const bcrypt = require('bcryptjs');
 
 exports.handler = async (event) => {
-    if (event.httpMethod === 'OPTIONS') {
-        return { statusCode: 204, headers, body: '' };
-    }
-
     if (event.httpMethod !== 'POST') {
-        return { statusCode: 405, headers, body: JSON.stringify({ message: 'Method not allowed' }) };
+        return { statusCode: 405, body: JSON.stringify({ message: 'Method not allowed' }) };
     }
 
     try {
-        const { name, email, password } = JSON.parse(event.body || '{}');
+        await connectDB();
+
+        const { name, email, password } = JSON.parse(event.body);
 
         if (!name || !email || !password) {
             return {
                 statusCode: 400,
-                headers,
-                body: JSON.stringify({ message: 'All fields are required.' })
+                body: JSON.stringify({ message: 'Name, email, and password are required' }),
             };
         }
-
-        await connectDB();
 
         const existingUser = await User.findOne({ email: email.toLowerCase() });
 
         if (existingUser) {
             return {
-                statusCode: 409, // Conflict
-                headers,
-                body: JSON.stringify({ message: 'An account with this email already exists.' })
+                statusCode: 409,
+                body: JSON.stringify({ message: 'An account with this email already exists' }),
             };
         }
 
-        const newUser = new User({
-            name,
-            email: email.toLowerCase(),
-            passwordHash: hashPassword(password),
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const user = await User.create({
+            name: name.trim(),
+            email: email.toLowerCase().trim(),
+            password: hashedPassword,
         });
 
-        await newUser.save();
-
         return {
-            statusCode: 201, // Created
-            headers,
+            statusCode: 201,
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                message: 'Account created successfully!',
-                user: { id: newUser._id, name: newUser.name, email: newUser.email }
-            })
+                message: 'Account created successfully',
+                user: {
+                    id: user._id,
+                    name: user.name,
+                    email: user.email,
+                },
+            }),
         };
-
-    } catch (err) {
-        console.error('Register error:', err);
+    } catch (error) {
+        console.error('Register error:', error);
         return {
             statusCode: 500,
-            headers,
-            body: JSON.stringify({ message: 'Something went wrong. Please try again.' })
+            body: JSON.stringify({ message: 'Internal server error' }),
         };
     }
 };
