@@ -1,1 +1,271 @@
-<p>home works!</p>
+<!-- ============================================================
+     THRIFTHUB — HOME PAGE
+     Sections: Navbar-aware wrapper → Hero → Why → Featured → Testimonials → Newsletter
+     ============================================================ -->
+
+<div class="th-page">
+
+    <!-- ── HERO ─────────────────────────────────────────────────── -->
+    <section class="th-hero" aria-label="Hero">
+
+        <!-- Floating photo boxes (decorative, z-index: -1) -->
+        <div class="th-hero__photos" aria-hidden="true">
+            <div class="th-photo th-photo--1">
+                <img src="/assets/images/hero-1.jpg" alt="" loading="eager" />
+            </div>
+            <div class="th-photo th-photo--2">
+                <img src="/assets/images/hero-2.jpg" alt="" loading="eager" />
+            </div>
+            <div class="th-photo th-photo--3">
+                <img src="/assets/images/hero-3.jpg" alt="" loading="eager" />
+            </div>
+            <div class="th-photo th-photo--4">
+                <img src="/assets/images/hero-4.jpg" alt="" loading="eager" />
+            </div>
+        </div>
+
+        <!-- Noise overlay -->
+        <div class="th-hero__noise" aria-hidden="true"></div>
+
+        <!-- Hero content -->
+        <div class="th-hero__content">
+
+            <!-- Eyebrow tag -->
+            <div class="th-hero__eyebrow th-animate-up th-delay-0">
+                <span class="th-tag">New Arrivals Every Week</span>
+            </div>
+
+            <!-- Main headline -->
+            <h1 class="th-hero__title th-animate-up th-delay-1">
+                <span class="th-hero__title-line">THRIFT</span>
+                <span class="th-hero__title-line th-hero__title-line--accent">HARDER.</span>
+                <span class="th-hero__title-line">FLEX SMARTER.</span>
+            </h1>
+
+            <!-- Sub -->
+            <p class="th-hero__sub th-animate-up th-delay-2">
+                Philippines' cleanest ukay-ukay marketplace.<br />
+                Real finds. Real prices. No cap.
+            </p>
+
+            <!-- CTAs -->
+            <div class="th-hero__ctas th-animate-up th-delay-3">
+                <a routerLink="/catalog" class="th-btn th-btn--primary">
+                    Shop Now
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                </a>
+                <a routerLink="/register" class="th-btn th-btn--ghost">
+                    Join Free
+                </a>
+            </div>
+
+            <!-- Stats bar -->
+            <div class="th-hero__stats th-animate-up th-delay-4">
+                <div class="th-stat">
+                    <span class="th-stat__num">500+</span>
+                    <span class="th-stat__label">Items Listed</span>
+                </div>
+                <div class="th-stat__divider" aria-hidden="true"></div>
+                <div class="th-stat">
+                    <span class="th-stat__num">₱199</span>
+                    <span class="th-stat__label">Starting Price</span>
+                </div>
+                <div class="th-stat__divider" aria-hidden="true"></div>
+                <div class="th-stat">
+                    <span class="th-stat__num">100%</span>
+                    <span class="th-stat__label">Authentic Finds</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Scroll hint -->
+        <div class="th-hero__scroll-hint th-animate-up th-delay-5" aria-hidden="true">
+            <span class="th-scroll-line"></span>
+            <span class="th-scroll-text">SCROLL</span>
+        </div>
+
+    </section>
+
+    <!-- ── WHY THRIFTHUB ─────────────────────────────────────────── -->
+    <section class="th-section th-why" aria-labelledby="why-heading">
+        <div class="th-container">
+
+            <div class="th-section__header">
+                <p class="th-section__overline">Why Us</p>
+                <h2 class="th-section__title" id="why-heading">
+                    Built different.<br />For real thrifters.
+                </h2>
+            </div>
+
+            <div class="th-why__grid">
+                @for (item of whyItems; track item.title) {
+                <div class="th-why__card">
+                    <span class="th-why__icon" aria-hidden="true">{{ item.icon }}</span>
+                    <h3 class="th-why__card-title">{{ item.title }}</h3>
+                    <p class="th-why__card-desc">{{ item.desc }}</p>
+                </div>
+                }
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ── FEATURED PRODUCTS ─────────────────────────────────────── -->
+    <section class="th-section th-featured" aria-labelledby="featured-heading">
+        <div class="th-container">
+
+            <div class="th-section__header th-section__header--row">
+                <div>
+                    <p class="th-section__overline">Fresh Drops</p>
+                    <h2 class="th-section__title" id="featured-heading">New In.</h2>
+                </div>
+                <a routerLink="/catalog" class="th-btn th-btn--outline th-btn--sm">
+                    View All
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                </a>
+            </div>
+
+            <!-- Loading state -->
+            @if (isLoadingProducts) {
+            <div class="th-products__grid">
+                @for (skeleton of [1,2,3,4,5,6,7,8]; track skeleton) {
+                <div class="th-product-skeleton" aria-hidden="true">
+                    <div class="th-skeleton th-skeleton--img"></div>
+                    <div class="th-skeleton th-skeleton--text"></div>
+                    <div class="th-skeleton th-skeleton--text th-skeleton--short"></div>
+                </div>
+                }
+            </div>
+            }
+
+            <!-- Error state -->
+            @if (productsError && !isLoadingProducts) {
+            <div class="th-products__error" role="alert">
+                <span class="th-error__icon" aria-hidden="true">◌</span>
+                <p>Couldn't load products right now.</p>
+                <button class="th-btn th-btn--ghost th-btn--sm" (click)="fetchFeaturedProducts()">
+                    Try Again
+                </button>
+            </div>
+            }
+
+            <!-- Product grid -->
+            @if (!isLoadingProducts && !productsError && featuredProducts.length > 0) {
+            <div class="th-products__grid">
+                @for (product of featuredProducts; track trackByProduct($index, product)) {
+                <article class="th-product-card" [routerLink]="['/product', product._id]">
+                    <div class="th-product-card__img-wrap">
+                        <img [src]="product.images[0] ? '/assets/images/' + product.images[0] : '/assets/images/placeholder.jpg'" [alt]="product.name"
+                            class="th-product-card__img" loading="lazy" />
+                        <span class="th-product-card__condition">{{ product.condition }}</span>
+                    </div>
+                    <div class="th-product-card__info">
+                        <p class="th-product-card__category">{{ product.category }}</p>
+                        <h3 class="th-product-card__name">{{ product.name }}</h3>
+                        <div class="th-product-card__footer">
+                            <span class="th-product-card__price">{{ formatPrice(product.price) }}</span>
+                            <div class="th-product-card__sizes">
+                                @for (size of product.size.slice(0, 3); track size) {
+                                <span class="th-size-chip">{{ size }}</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </article>
+                }
+            </div>
+            }
+
+            <!-- Empty state -->
+            @if (!isLoadingProducts && !productsError && featuredProducts.length === 0) {
+            <div class="th-products__empty">
+                <p>No products available yet. Check back soon!</p>
+                <a routerLink="/catalog" class="th-btn th-btn--outline th-btn--sm">Browse Catalog</a>
+            </div>
+            }
+
+        </div>
+    </section>
+
+    <!-- ── TESTIMONIALS ───────────────────────────────────────────── -->
+    <section class="th-section th-testimonials" aria-labelledby="testimonials-heading">
+        <div class="th-container">
+
+            <div class="th-section__header">
+                <p class="th-section__overline">Reviews</p>
+                <h2 class="th-section__title" id="testimonials-heading">
+                    The plug is real.
+                </h2>
+            </div>
+
+            <div class="th-testimonials__grid">
+                @for (t of testimonials; track t.handle) {
+                <blockquote class="th-testimonial-card">
+                    <div class="th-testimonial-card__avatar" aria-hidden="true">
+                        {{ t.avatar }}
+                    </div>
+                    <p class="th-testimonial-card__quote">"{{ t.quote }}"</p>
+                    <footer class="th-testimonial-card__meta">
+                        <span class="th-testimonial-card__name">{{ t.name }}</span>
+                        <span class="th-testimonial-card__handle">{{ t.handle }}</span>
+                    </footer>
+                </blockquote>
+                }
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ── NEWSLETTER ─────────────────────────────────────────────── -->
+    <section class="th-section th-newsletter" aria-labelledby="newsletter-heading">
+        <div class="th-container">
+            <div class="th-newsletter__inner">
+
+                <div class="th-newsletter__copy">
+                    <p class="th-section__overline">Stay in the loop</p>
+                    <h2 class="th-newsletter__title" id="newsletter-heading">
+                        Don't miss the<br />
+                        <span class="th-text--accent">next drop.</span>
+                    </h2>
+                    <p class="th-newsletter__sub">
+                        New items land every week. Be first to cop before they're gone.
+                    </p>
+                </div>
+
+                <div class="th-newsletter__form-wrap">
+                    @if (!newsletterSubmitted) {
+                    <div class="th-newsletter__form" role="form" aria-label="Newsletter signup">
+                        <label for="newsletter-email" class="th-sr-only">Email address</label>
+                        <input id="newsletter-email" type="email" class="th-newsletter__input"
+                            placeholder="your@email.com" [(ngModel)]="newsletterEmail"
+                            (keyup.enter)="submitNewsletter()" autocomplete="email" />
+                        <button class="th-btn th-btn--primary" (click)="submitNewsletter()"
+                            [disabled]="newsletterLoading || !newsletterEmail" [attr.aria-busy]="newsletterLoading">
+                            @if (newsletterLoading) {
+                            <span class="th-spinner" aria-hidden="true"></span>
+                            } @else {
+                            Notify Me
+                            }
+                        </button>
+                    </div>
+                    <p class="th-newsletter__disclaimer">No spam, ever. Unsubscribe anytime.</p>
+                    } @else {
+                    <div class="th-newsletter__success" role="status">
+                        <span class="th-success__icon" aria-hidden="true">✦</span>
+                        <p class="th-success__msg">You're in! Expect fire drops in your inbox.</p>
+                    </div>
+                    }
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+</div>
