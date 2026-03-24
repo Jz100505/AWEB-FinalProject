@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -11,7 +11,7 @@ import { AuthService } from '../../services/auth.service';
   templateUrl: './register.html',
   styleUrl: './register.css',
 })
-export class Register {
+export class Register implements OnInit, OnDestroy {
 
   // ── Form fields ────────────────────────────────────────────
   fullName = '';
@@ -28,6 +28,15 @@ export class Register {
   successMsg = '';
 
   constructor(private auth: AuthService, private router: Router) { }
+
+  // ── Hide navbar on this page ───────────────────────────────
+  ngOnInit(): void {
+    document.body.classList.add('no-navbar');
+  }
+
+  ngOnDestroy(): void {
+    document.body.classList.remove('no-navbar');
+  }
 
   // ── Toggle password visibility ─────────────────────────────
   togglePass(): void {

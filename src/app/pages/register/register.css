@@ -1,7 +1,9 @@
 /* ============================================================
    REGISTER PAGE — ThriftHub
+   Red/Warm Theme | Barlow Condensed
    ============================================================ */
 
+/* ── Page shell ───────────────────────────────────────────── */
 .register-page {
     min-height: 100vh;
     display: flex;
@@ -25,7 +27,7 @@
 .bg-blob--1 {
     width: 480px;
     height: 480px;
-    background: radial-gradient(circle, rgba(44, 107, 79, 0.12) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(178, 34, 34, 0.10) 0%, transparent 70%);
     top: -120px;
     right: -100px;
 }
@@ -41,7 +43,7 @@
 .bg-blob--3 {
     width: 260px;
     height: 260px;
-    background: radial-gradient(circle, rgba(44, 107, 79, 0.07) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(178, 34, 34, 0.06) 0%, transparent 70%);
     top: 40%;
     left: 10%;
 }
@@ -80,16 +82,19 @@
 
 .register-heading h1 {
     font-family: var(--font-heading);
-    font-size: var(--text-3xl);
-    font-weight: var(--font-bold);
+    font-size: var(--text-4xl);
+    font-weight: 800;
     color: var(--text-primary);
-    margin-bottom: var(--space-1);
-    line-height: 1.2;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    line-height: 1.0;
+    margin-bottom: var(--space-2);
 }
 
 .register-heading p {
     font-size: var(--text-sm);
-    color: var(--text-secondary);
+    color: var(--text-muted);
+    font-weight: var(--font-normal);
 }
 
 /* ── Alerts ───────────────────────────────────────────────── */
@@ -106,15 +111,15 @@
 }
 
 .alert-error {
-    background: var(--danger-bg, #fef2f2);
+    background: var(--danger-bg);
     color: var(--danger);
-    border: 1px solid rgba(192, 57, 43, 0.2);
+    border: 1px solid rgba(178, 34, 34, 0.2);
 }
 
 .alert-success {
     background: var(--success-bg);
     color: var(--success);
-    border: 1px solid rgba(44, 107, 79, 0.2);
+    border: 1px solid rgba(45, 122, 79, 0.2);
 }
 
 /* ── Form ─────────────────────────────────────────────────── */
@@ -132,9 +137,11 @@
 }
 
 .form-label {
-    font-size: var(--text-sm);
+    font-size: var(--text-xs);
     font-weight: var(--font-semibold);
-    color: var(--text-primary);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
 }
 
 /* ── Input wrap ───────────────────────────────────────────── */
@@ -160,19 +167,24 @@
     color: var(--text-primary);
     background: var(--bg-main);
     border: 1.5px solid var(--border);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .form-control::placeholder {
     color: var(--text-muted);
+    font-weight: var(--font-light);
+}
+
+.form-control:hover {
+    border-color: var(--text-muted);
 }
 
 .form-control:focus {
     border-color: var(--primary);
     background: var(--bg-white);
-    box-shadow: 0 0 0 3px rgba(44, 107, 79, 0.1);
+    box-shadow: 0 0 0 3px rgba(178, 34, 34, 0.10);
 }
 
 input[type="password"],
@@ -209,7 +221,7 @@ input[type="text"] {
 
 .strength-bar {
     flex: 1;
-    height: 4px;
+    height: 3px;
     background: var(--border);
     border-radius: var(--radius-full);
     overflow: hidden;
@@ -241,7 +253,7 @@ input[type="text"] {
     font-weight: var(--font-semibold);
     white-space: nowrap;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
 }
 
 .strength-label.strength-weak {
@@ -256,7 +268,7 @@ input[type="text"] {
     color: var(--success);
 }
 
-/* ── Field hints (match / mismatch) ──────────────────────── */
+/* ── Field hints ──────────────────────────────────────────── */
 .field-hint {
     font-size: var(--text-xs);
     font-weight: var(--font-medium);
@@ -300,7 +312,7 @@ input[type="text"] {
     height: 18px;
     min-width: 18px;
     border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-xs);
     background: var(--bg-main);
     display: inline-flex;
     align-items: center;
@@ -331,29 +343,93 @@ input[type="text"] {
     font-weight: var(--font-semibold);
     text-decoration: underline;
     text-underline-offset: 2px;
-    transition: color 0.2s ease;
+    transition: color 0.15s ease;
 }
 
 .terms-link:hover {
-    color: var(--primary-light);
+    color: var(--primary-dark);
 }
 
-/* ── Loading spinner ──────────────────────────────────────── */
+/* ── Submit button ────────────────────────────────────────── */
+.btn-register {
+    width: 100%;
+    background: var(--text-primary);
+    color: var(--bg-white);
+    border: 2px solid var(--text-primary);
+    border-radius: var(--radius-sm);
+    padding: var(--space-4) var(--space-6);
+    font-family: var(--font-heading);
+    font-size: var(--text-lg);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: var(--transition-base);
+    min-height: 52px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-register:hover:not(:disabled) {
+    background: var(--primary);
+    border-color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-register:active:not(:disabled) {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+    transform: translateY(0);
+}
+
+.btn-register:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
 .btn-loading {
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
 }
 
-.spin {
-    animation: spin 0.8s linear infinite;
+/* ── Sign-in link button ──────────────────────────────────── */
+.btn-secondary-outline {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: var(--space-3) var(--space-6);
+    font-family: var(--font-heading);
+    font-size: var(--text-base);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    text-decoration: none;
+    transition: var(--transition-base);
+    min-height: 48px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-secondary-outline:hover {
+    border-color: var(--text-primary);
+    color: var(--text-primary);
+    background: var(--bg-card);
 }
 
 /* ── Divider ──────────────────────────────────────────────── */
 .register-divider {
     text-align: center;
     position: relative;
-    margin-bottom: var(--space-4);
+    margin: var(--space-5) 0 var(--space-4);
 }
 
 .register-divider::before {
@@ -372,6 +448,14 @@ input[type="text"] {
     padding: 0 var(--space-3);
     font-size: var(--text-xs);
     color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: var(--font-semibold);
+}
+
+/* ── Spinner ──────────────────────────────────────────────── */
+.spin {
+    animation: spin 0.8s linear infinite;
 }
 
 /* ── Animations ───────────────────────────────────────────── */
@@ -411,6 +495,6 @@ input[type="text"] {
     }
 
     .register-heading h1 {
-        font-size: var(--text-2xl);
+        font-size: var(--text-3xl);
     }
 }

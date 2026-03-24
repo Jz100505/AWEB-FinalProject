@@ -1,6 +1,6 @@
 <div class="register-page">
 
-    <!-- Decorative background blobs -->
+    <!-- Decorative background -->
     <div class="bg-blob bg-blob--1" aria-hidden="true"></div>
     <div class="bg-blob bg-blob--2" aria-hidden="true"></div>
     <div class="bg-blob bg-blob--3" aria-hidden="true"></div>
@@ -14,7 +14,7 @@
 
         <!-- Heading -->
         <div class="register-heading">
-            <h1>Create an account</h1>
+            <h1>Create Account</h1>
             <p>Join ThriftHub and start thrifting today</p>
         </div>
 
@@ -87,14 +87,12 @@
                         autocomplete="new-password" required />
                     <button type="button" class="pass-toggle" (click)="togglePass()"
                         [attr.aria-label]="showPass ? 'Hide password' : 'Show password'">
-                        <!-- Eye open -->
                         <svg *ngIf="!showPass" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" aria-hidden="true">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                             <circle cx="12" cy="12" r="3" />
                         </svg>
-                        <!-- Eye closed -->
                         <svg *ngIf="showPass" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" aria-hidden="true">
@@ -104,7 +102,6 @@
                         </svg>
                     </button>
                 </div>
-                <!-- Password strength indicator -->
                 <div class="password-strength" *ngIf="password.length > 0">
                     <div class="strength-bar">
                         <div class="strength-fill" [ngClass]="passwordStrengthClass"></div>
@@ -142,7 +139,6 @@
                         </svg>
                     </button>
                 </div>
-                <!-- Match indicator -->
                 <p class="field-hint field-hint--error"
                     *ngIf="confirmPassword.length > 0 && password !== confirmPassword">
                     Passwords do not match.
@@ -159,14 +155,14 @@
                     <input type="checkbox" class="check-input" [(ngModel)]="agreedToTerms" name="agreedToTerms" />
                     <span class="check-box"></span>
                     I agree to the
-                    <a routerLink="/terms" class="terms-link">Terms of Service</a>
+                    <a routerLink="/terms" class="terms-link" target="_blank">Terms of Service</a>
                     and
-                    <a routerLink="/privacy" class="terms-link">Privacy Policy</a>
+                    <a routerLink="/privacy" class="terms-link" target="_blank">Privacy Policy</a>
                 </label>
             </div>
 
             <!-- Submit -->
-            <button type="submit" class="btn btn-primary btn-full btn-lg" [disabled]="isLoading">
+            <button type="submit" class="btn-register" [disabled]="isLoading">
                 <span *ngIf="!isLoading">Create Account</span>
                 <span *ngIf="isLoading" class="btn-loading">
                     <svg class="spin" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
@@ -185,9 +181,7 @@
         </div>
 
         <!-- Login link -->
-        <a routerLink="/login" class="btn btn-secondary btn-full">
-            Sign In
-        </a>
+        <a routerLink="/login" class="btn-secondary-outline">Sign In</a>
 
     </div>
 

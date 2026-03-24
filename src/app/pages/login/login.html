@@ -3,6 +3,7 @@
     <!-- Decorative background blobs -->
     <div class="bg-blob bg-blob--1" aria-hidden="true"></div>
     <div class="bg-blob bg-blob--2" aria-hidden="true"></div>
+    <div class="bg-blob bg-blob--3" aria-hidden="true"></div>
 
     <div class="login-card">
 
@@ -92,7 +93,7 @@
             </div>
 
             <!-- Submit -->
-            <button type="submit" class="btn btn-primary btn-full btn-lg" [disabled]="isLoading">
+            <button type="submit" class="btn-login" [disabled]="isLoading">
                 <span *ngIf="!isLoading">Sign In</span>
                 <span *ngIf="isLoading" class="btn-loading">
                     <svg class="spin" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
@@ -111,7 +112,7 @@
         </div>
 
         <!-- Register link -->
-        <a routerLink="/register" class="btn btn-secondary btn-full">
+        <a routerLink="/register" class="btn-secondary-outline">
             Create an Account
         </a>
 

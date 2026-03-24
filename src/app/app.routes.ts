@@ -28,6 +28,18 @@ export const routes: Routes = [
             import('./pages/contact/contact').then(m => m.Contact),
         title: 'Contact Us — ThriftHub'
     },
+    {
+        path: 'terms',
+        loadComponent: () =>
+            import('./pages/terms/terms').then(m => m.Terms),
+        title: 'Terms of Service — ThriftHub'
+    },
+    {
+        path: 'privacy',
+        loadComponent: () =>
+            import('./pages/privacy/privacy').then(m => m.Privacy),
+        title: 'Privacy Policy — ThriftHub'
+    },
 
     // ── Product Pages ──────────────────────────────────────────
     {
