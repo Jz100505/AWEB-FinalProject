@@ -8,13 +8,16 @@
     <!-- ── HERO ─────────────────────────────────────────────────── -->
     <section class="th-hero" aria-label="Hero">
 
-        <!-- Noise overlay -->
-        <div class="th-hero__noise" aria-hidden="true"></div>
+        <!-- Background Image & Overlays -->
+        <div class="th-hero__bg">
+            <img src="/assets/images/hero_main_editorial.webp" alt="" class="th-hero__img" loading="eager" />
+            <div class="th-hero__overlay" aria-hidden="true"></div>
+            <!-- Noise overlay -->
+            <div class="th-hero__grain" aria-hidden="true"></div>
+        </div>
 
-        <!-- Centered grid wrapper — constrains max width on ultrawide screens -->
+        <!-- Centered wrapper -->
         <div class="th-hero__inner">
-
-            <!-- Left column: Hero content -->
             <div class="th-hero__content">
 
                 <!-- Eyebrow tag -->
@@ -49,48 +52,27 @@
                     </a>
                 </div>
 
-                <!-- Stats bar -->
-                <div class="th-hero__stats th-animate-up th-delay-4">
-                    <div class="th-stat">
-                        <span class="th-stat__num">500+</span>
-                        <span class="th-stat__label">Items Listed</span>
-                    </div>
-                    <div class="th-stat__divider" aria-hidden="true"></div>
-                    <div class="th-stat">
-                        <span class="th-stat__num">₱199</span>
-                        <span class="th-stat__label">Starting Price</span>
-                    </div>
-                    <div class="th-stat__divider" aria-hidden="true"></div>
-                    <div class="th-stat">
-                        <span class="th-stat__num">100%</span>
-                        <span class="th-stat__label">Authentic Finds</span>
-                    </div>
+                <!-- Scroll hint -->
+                <div class="th-hero__scroll-hint th-animate-up th-delay-4" aria-hidden="true">
+                    <span class="th-scroll-line"></span>
+                    <span class="th-scroll-text">SCROLL</span>
                 </div>
 
             </div>
-
-            <!-- Right column: Floating photo grid -->
-            <div class="th-hero__photos" aria-hidden="true">
-                <div class="th-photo th-photo--1">
-                    <img src="/assets/images/hero_main_editorial.webp" alt="" loading="eager" />
-                </div>
-                <div class="th-photo th-photo--2">
-                    <img src="/assets/images/hero_img_0.webp" alt="" loading="eager" />
-                </div>
-                <div class="th-photo th-photo--3">
-                    <img src="/assets/images/hero_img_1.webp" alt="" loading="eager" />
-                </div>
-                <div class="th-photo th-photo--4">
-                    <img src="/assets/images/home_split_a.webp" alt="" loading="eager" />
-                </div>
-            </div>
-
         </div>
 
-        <!-- Scroll hint -->
-        <div class="th-hero__scroll-hint th-animate-up th-delay-5" aria-hidden="true">
-            <span class="th-scroll-line"></span>
-            <span class="th-scroll-text">SCROLL</span>
+        <!-- Floating stat badges -->
+        <div class="th-hero__badge th-hero__badge--1 th-animate-up th-delay-2" aria-hidden="true">
+            <span class="th-badge-num">500+</span>
+            <span class="th-badge-label">Items Listed</span>
+        </div>
+        <div class="th-hero__badge th-hero__badge--2 th-animate-up th-delay-3" aria-hidden="true">
+            <span class="th-badge-num">₱199</span>
+            <span class="th-badge-label">Starting Price</span>
+        </div>
+        <div class="th-hero__badge th-hero__badge--3 th-animate-up th-delay-4" aria-hidden="true">
+            <span class="th-badge-num">100%</span>
+            <span class="th-badge-label">Authentic Finds</span>
         </div>
 
     </section>
