@@ -161,14 +161,19 @@
             </div>
             }
 
-            <!-- Product grid -->
+            <!-- Product grid — 2 rows × 4 columns = 8 cards -->
             @if (!isLoadingProducts && !productsError && featuredProducts.length > 0) {
             <div class="th-products__grid">
                 @for (product of featuredProducts; track trackByProduct($index, product)) {
                 <article class="th-product-card" [routerLink]="['/product', product._id]">
                     <div class="th-product-card__img-wrap">
-                        <img [src]="product.images[0] ? '/assets/images/' + product.images[0] : '/assets/images/hero_main_editorial.webp'"
-                            [alt]="product.name" class="th-product-card__img" loading="lazy" />
+                        <!--
+                          FIX: use getProductImage(product, $index) instead of a single fallback.
+                          Each card now gets a unique placeholder when no DB image is stored,
+                          cycling through the four hero images by card position.
+                        -->
+                        <img [src]="getProductImage(product, $index)" [alt]="product.name" class="th-product-card__img"
+                            loading="lazy" />
                         <span class="th-product-card__condition">{{ product.condition }}</span>
                     </div>
                     <div class="th-product-card__info">

@@ -514,8 +514,12 @@
 
 .th-products__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    /* Exactly 4 columns on desktop — guarantees 2 rows of 4 = 8 cards */
+    grid-template-columns: repeat(4, 1fr);
+    /* Rows expand to fit content; never clipped */
+    grid-auto-rows: auto;
     gap: 24px;
+    overflow: visible;
 }
 
 /* Product card */
@@ -942,6 +946,13 @@
     .th-products__grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 12px;
+    }
+
+    @media (max-width: 1024px) and (min-width: 601px) {
+        .th-products__grid {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
     }
 
     .th-testimonials__grid {
