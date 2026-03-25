@@ -4,57 +4,9 @@ import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { CartService } from '../../services/cart.service';
+import { Order, ORDERS_STORAGE_KEY } from '../order-history/order-history';
 
 export type ProfileTab = 'account' | 'orders' | 'settings';
-
-export interface OrderItem {
-  name: string;
-  image: string;
-  price: number;
-  quantity: number;
-  size: string;
-}
-
-export interface Order {
-  id: string;
-  date: string;
-  status: 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
-  items: OrderItem[];
-  total: number;
-}
-
-// Mock orders for demonstration
-const MOCK_ORDERS: Order[] = [
-  {
-    id: 'TH-20260101',
-    date: '2026-01-15T10:30:00Z',
-    status: 'delivered',
-    total: 850,
-    items: [
-      { name: 'Yellow Hoodie', image: '/assets/images/yellow_hoodie.webp', price: 550, quantity: 1, size: 'M' },
-      { name: 'Grey T-Shirt', image: '/assets/images/grey_tshirt.webp', price: 200, quantity: 1, size: 'L' },
-    ],
-  },
-  {
-    id: 'TH-20260215',
-    date: '2026-02-08T14:22:00Z',
-    status: 'shipped',
-    total: 750,
-    items: [
-      { name: 'Blue Jeans', image: '/assets/images/blue_jeans.webp', price: 400, quantity: 1, size: 'M' },
-      { name: 'Grey Sweatpants', image: '/assets/images/grey_sweatpants.webp', price: 250, quantity: 1, size: 'L' },
-    ],
-  },
-  {
-    id: 'TH-20260312',
-    date: '2026-03-10T09:05:00Z',
-    status: 'confirmed',
-    total: 450,
-    items: [
-      { name: 'Vintage Long Sleeves', image: '/assets/images/vintage_long_sleeves.webp', price: 450, quantity: 1, size: 'S' },
-    ],
-  },
-];
 
 @Component({
   selector: 'app-profile',
@@ -88,7 +40,7 @@ export class Profile implements OnInit, OnDestroy {
   showConfirmPass = false;
 
   // ── Orders ────────────────────────────────────────────────
-  orders: Order[] = MOCK_ORDERS;
+  orders: Order[] = [];
   expandedOrderId: string | null = null;
 
   // ── UI state ──────────────────────────────────────────────
@@ -128,6 +80,7 @@ export class Profile implements OnInit, OnDestroy {
         };
         this.editName = this.user.name;
         this.editEmail = this.user.email;
+        this.loadOrders();
         return;
       }
     } catch { /* AuthService shape unknown — fall through */ }
@@ -162,6 +115,7 @@ export class Profile implements OnInit, OnDestroy {
 
     this.editName = this.user.name;
     this.editEmail = this.user.email;
+    this.loadOrders();
   }
 
   ngOnDestroy(): void {
@@ -184,6 +138,11 @@ export class Profile implements OnInit, OnDestroy {
     return this.orders
       .filter(o => o.status !== 'cancelled')
       .reduce((s, o) => s + o.total, 0);
+  }
+
+  // Most recent 3 orders — shown as a preview on the profile tab
+  get recentOrders(): Order[] {
+    return this.orders.slice(0, 3);
   }
 
   get cartItemCount(): number { return this.cartService.getCount(); }
@@ -239,6 +198,24 @@ export class Profile implements OnInit, OnDestroy {
   }
 
   // ── Orders ────────────────────────────────────────────────
+  private loadOrders(): void {
+    try {
+      const raw = localStorage.getItem(ORDERS_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Order[];
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]?.id) {
+          this.orders = parsed;
+          return;
+        }
+      }
+    } catch { /* fall through — orders stay empty */ }
+    this.orders = [];
+  }
+
+  navigateToOrderHistory(): void {
+    this.router.navigate(['/order-history']);
+  }
+
   toggleOrder(id: string): void {
     this.expandedOrderId = this.expandedOrderId === id ? null : id;
   }

@@ -335,9 +335,13 @@
                                 <p class="pf-panel__subtitle">{{ totalOrders }} order{{ totalOrders !== 1 ? 's' : '' }}
                                     — {{ formatPrice(totalSpent) }} total spent.</p>
                             </div>
-                            <a routerLink="/catalog" class="pf-btn pf-btn--ghost pf-btn--sm">
-                                Shop Again
-                            </a>
+                            <button class="pf-btn pf-btn--ghost pf-btn--sm" (click)="navigateToOrderHistory()" type="button">
+                                View All Orders
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" aria-hidden="true">
+                                    <path d="M5 12h14M12 5l7 7-7 7" />
+                                </svg>
+                            </button>
                         </div>
 
                         @if (orders.length === 0) {
@@ -359,7 +363,10 @@
 
                         @if (orders.length > 0) {
                         <div class="pf-orders-list">
-                            @for (order of orders; track order.id) {
+                            @if (orders.length > 3) {
+                            <p class="pf-orders-note">Showing your 3 most recent orders.</p>
+                            }
+                            @for (order of recentOrders; track order.id) {
                             <div class="pf-order" [class.pf-order--expanded]="isOrderExpanded(order.id)">
 
                                 <!-- Order header row -->
@@ -398,7 +405,7 @@
                                                 <span class="pf-order__item-name">{{ item.name }}</span>
                                                 <div class="pf-order__item-meta">
                                                     <span class="pf-size-chip">{{ item.size }}</span>
-                                                    <span class="pf-order__item-qty">× {{ item.quantity }}</span>
+                                                    <span class="pf-order__item-qty">&times; {{ item.quantity }}</span>
                                                 </div>
                                             </div>
                                             <span class="pf-order__item-price">{{ formatPrice(item.price *
@@ -420,6 +427,19 @@
 
                             </div>
                             }
+                        </div>
+
+                        <!-- View full history CTA -->
+                        <div class="pf-orders-view-all">
+                            <button class="pf-btn pf-btn--primary pf-btn--full" (click)="navigateToOrderHistory()" type="button">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" aria-hidden="true">
+                                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                                    <line x1="3" y1="6" x2="21" y2="6" />
+                                    <path d="M16 10a4 4 0 0 1-8 0" />
+                                </svg>
+                                View Full Order History
+                            </button>
                         </div>
                         }
 
