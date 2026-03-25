@@ -8,75 +8,80 @@
     <!-- ── HERO ─────────────────────────────────────────────────── -->
     <section class="th-hero" aria-label="Hero">
 
-        <!-- Floating photo boxes (decorative, z-index: -1) -->
-        <div class="th-hero__photos" aria-hidden="true">
-            <div class="th-photo th-photo--1">
-                <img src="/assets/images/hero_main_editorial.webp" alt="" loading="eager" />
-            </div>
-            <div class="th-photo th-photo--2">
-                <img src="/assets/images/hero_img_0.webp" alt="" loading="eager" />
-            </div>
-            <div class="th-photo th-photo--3">
-                <img src="/assets/images/hero_img_1.webp" alt="" loading="eager" />
-            </div>
-            <div class="th-photo th-photo--4">
-                <img src="/assets/images/home_split_a.webp" alt="" loading="eager" />
-            </div>
-        </div>
-
         <!-- Noise overlay -->
         <div class="th-hero__noise" aria-hidden="true"></div>
 
-        <!-- Hero content -->
-        <div class="th-hero__content">
+        <!-- Centered grid wrapper — constrains max width on ultrawide screens -->
+        <div class="th-hero__inner">
 
-            <!-- Eyebrow tag -->
-            <div class="th-hero__eyebrow th-animate-up th-delay-0">
-                <span class="th-tag">New Arrivals Every Week</span>
+            <!-- Left column: Hero content -->
+            <div class="th-hero__content">
+
+                <!-- Eyebrow tag -->
+                <div class="th-hero__eyebrow th-animate-up th-delay-0">
+                    <span class="th-tag">New Arrivals Every Week</span>
+                </div>
+
+                <!-- Main headline -->
+                <h1 class="th-hero__title th-animate-up th-delay-1">
+                    <span class="th-hero__title-line">THRIFT</span>
+                    <span class="th-hero__title-line th-hero__title-line--accent">HARDER.</span>
+                    <span class="th-hero__title-line">FLEX SMARTER.</span>
+                </h1>
+
+                <!-- Sub -->
+                <p class="th-hero__sub th-animate-up th-delay-2">
+                    Philippines' cleanest ukay-ukay marketplace.<br />
+                    Real finds. Real prices. No cap.
+                </p>
+
+                <!-- CTAs -->
+                <div class="th-hero__ctas th-animate-up th-delay-3">
+                    <a routerLink="/catalog" class="th-btn th-btn--primary">
+                        Shop Now
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </a>
+                    <a routerLink="/register" class="th-btn th-btn--ghost">
+                        Join Free
+                    </a>
+                </div>
+
+                <!-- Stats bar -->
+                <div class="th-hero__stats th-animate-up th-delay-4">
+                    <div class="th-stat">
+                        <span class="th-stat__num">500+</span>
+                        <span class="th-stat__label">Items Listed</span>
+                    </div>
+                    <div class="th-stat__divider" aria-hidden="true"></div>
+                    <div class="th-stat">
+                        <span class="th-stat__num">₱199</span>
+                        <span class="th-stat__label">Starting Price</span>
+                    </div>
+                    <div class="th-stat__divider" aria-hidden="true"></div>
+                    <div class="th-stat">
+                        <span class="th-stat__num">100%</span>
+                        <span class="th-stat__label">Authentic Finds</span>
+                    </div>
+                </div>
+
             </div>
 
-            <!-- Main headline -->
-            <h1 class="th-hero__title th-animate-up th-delay-1">
-                <span class="th-hero__title-line">THRIFT</span>
-                <span class="th-hero__title-line th-hero__title-line--accent">HARDER.</span>
-                <span class="th-hero__title-line">FLEX SMARTER.</span>
-            </h1>
-
-            <!-- Sub -->
-            <p class="th-hero__sub th-animate-up th-delay-2">
-                Philippines' cleanest ukay-ukay marketplace.<br />
-                Real finds. Real prices. No cap.
-            </p>
-
-            <!-- CTAs -->
-            <div class="th-hero__ctas th-animate-up th-delay-3">
-                <a routerLink="/catalog" class="th-btn th-btn--primary">
-                    Shop Now
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                        <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round" />
-                    </svg>
-                </a>
-                <a routerLink="/register" class="th-btn th-btn--ghost">
-                    Join Free
-                </a>
-            </div>
-
-            <!-- Stats bar -->
-            <div class="th-hero__stats th-animate-up th-delay-4">
-                <div class="th-stat">
-                    <span class="th-stat__num">500+</span>
-                    <span class="th-stat__label">Items Listed</span>
+            <!-- Right column: Floating photo grid -->
+            <div class="th-hero__photos" aria-hidden="true">
+                <div class="th-photo th-photo--1">
+                    <img src="/assets/images/hero_main_editorial.webp" alt="" loading="eager" />
                 </div>
-                <div class="th-stat__divider" aria-hidden="true"></div>
-                <div class="th-stat">
-                    <span class="th-stat__num">₱199</span>
-                    <span class="th-stat__label">Starting Price</span>
+                <div class="th-photo th-photo--2">
+                    <img src="/assets/images/hero_img_0.webp" alt="" loading="eager" />
                 </div>
-                <div class="th-stat__divider" aria-hidden="true"></div>
-                <div class="th-stat">
-                    <span class="th-stat__num">100%</span>
-                    <span class="th-stat__label">Authentic Finds</span>
+                <div class="th-photo th-photo--3">
+                    <img src="/assets/images/hero_img_1.webp" alt="" loading="eager" />
+                </div>
+                <div class="th-photo th-photo--4">
+                    <img src="/assets/images/home_split_a.webp" alt="" loading="eager" />
                 </div>
             </div>
 

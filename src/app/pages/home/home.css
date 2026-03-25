@@ -43,7 +43,7 @@
     display: flex;
     align-items: center;
     overflow: hidden;
-    padding: 120px 5vw 80px;
+    padding: 0;
 }
 
 /* Noise texture overlay */
@@ -56,32 +56,40 @@
     z-index: 1;
 }
 
-/* Floating photo boxes — grid layout prevents overlap at all viewports */
+/* Centered two-column grid — caps width so it never sprawls on ultrawide */
+.th-hero__inner {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 120px clamp(1.5rem, 5vw, 5rem) 80px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(2rem, 4vw, 5rem);
+    align-items: center;
+    min-height: 100svh;
+}
+
+/* Photo grid — right column, in normal flow */
 .th-hero__photos {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    /* occupy the right ~52% so it never tramples hero text */
-    width: min(52%, 700px);
+    position: relative;
+    width: 100%;
+    min-height: 520px;
     z-index: 0;
     pointer-events: none;
-
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr 1fr;
     gap: 10px;
-    padding: 72px 20px 20px 10px;
-    /* top-pad clears the navbar */
+    padding: 20px 0;
 }
 
 .th-photo {
     position: relative;
-    /* normal grid flow — no overlap possible */
     overflow: hidden;
     border-radius: 4px;
     min-height: 0;
-    /* lets grid cells shrink correctly */
     box-shadow: 0 20px 52px rgba(0, 0, 0, 0.5);
 }
 
@@ -98,7 +106,7 @@
     opacity: 0.85;
 }
 
-/* Individual rotations + floats — purely decorative, no positioning */
+/* Individual rotations + floats */
 .th-photo--1 {
     transform: rotate(1.5deg);
     animation: th-float-1 6s ease-in-out infinite;
@@ -155,11 +163,11 @@
     }
 }
 
-/* Hero content */
+/* Hero content — left column */
 .th-hero__content {
     position: relative;
     z-index: 2;
-    max-width: 720px;
+    max-width: 640px;
 }
 
 /* Eyebrow */
@@ -256,7 +264,7 @@
 .th-hero__scroll-hint {
     position: absolute;
     bottom: 32px;
-    left: 5vw;
+    left: clamp(1.5rem, 5vw, 5rem);
     z-index: 2;
     display: flex;
     align-items: center;
@@ -871,23 +879,30 @@
 
 /* ── RESPONSIVE ───────────────────────────────────────────── */
 @media (max-width: 900px) {
+    .th-hero__inner {
+        grid-template-columns: 1fr;
+        padding-top: 100px;
+        padding-bottom: 60px;
+        min-height: auto;
+        gap: 2rem;
+    }
+
+    /* Reorder — photos go below text on mobile */
+    .th-hero__content {
+        order: 1;
+        max-width: 100%;
+    }
+
     .th-hero__photos {
-        width: 100%;
-        /* full width but behind text */
-        opacity: 0.25;
+        order: 2;
+        min-height: 300px;
+        opacity: 0.5;
         grid-template-columns: 1fr 1fr;
-        padding: 60px 12px 12px;
-        gap: 8px;
     }
 
     .th-photo--2,
     .th-photo--4 {
         display: none;
-        /* keep only 2 photos on mid-size */
-    }
-
-    .th-hero__photos {
-        grid-template-columns: 1fr;
     }
 
     .th-newsletter__inner {
@@ -896,8 +911,13 @@
 }
 
 @media (max-width: 600px) {
-    .th-hero {
-        padding: 100px 6vw 60px;
+    .th-hero__inner {
+        padding: 90px 1.5rem 60px;
+    }
+
+    .th-hero__photos {
+        min-height: 200px;
+        grid-template-columns: 1fr;
     }
 
     .th-hero__stats {
