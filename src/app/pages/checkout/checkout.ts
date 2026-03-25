@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { CartItem } from '../cart/cart';
+import { AuthService } from '../../services/auth.service';
 
+/** Legacy flat keys kept for reference — NOT used directly anymore. */
 export const CART_STORAGE_KEY = 'th_cart';
 export const ORDERS_STORAGE_KEY = 'th_orders';
 export const CONFIRMED_ORDER_KEY = 'th_last_order';
@@ -53,7 +55,10 @@ export class Checkout implements OnInit, OnDestroy {
 
   private orderTimer?: ReturnType<typeof setTimeout>;
 
-  constructor(private router: Router) { }
+  constructor(
+    private router: Router,
+    private authService: AuthService,
+  ) { }
 
   ngOnInit(): void {
     this.loadCart();
@@ -64,10 +69,23 @@ export class Checkout implements OnInit, OnDestroy {
     clearTimeout(this.orderTimer);
   }
 
+  // ── Per-user storage keys ─────────────────────────────────────
+  private get userId(): string | null {
+    return this.authService.currentUser?.id ?? null;
+  }
+
+  private get userCartKey(): string {
+    return this.userId ? `th_cart_${this.userId}` : CART_STORAGE_KEY;
+  }
+
+  private get userOrdersKey(): string {
+    return this.userId ? `th_orders_${this.userId}` : ORDERS_STORAGE_KEY;
+  }
+
   // ── Load cart ─────────────────────────────────────────────────
   private loadCart(): void {
     try {
-      const raw = localStorage.getItem(CART_STORAGE_KEY);
+      const raw = localStorage.getItem(this.userCartKey);
       this.items = raw ? JSON.parse(raw) : [];
     } catch {
       this.items = [];
@@ -80,11 +98,10 @@ export class Checkout implements OnInit, OnDestroy {
 
   private prefillFromStorage(): void {
     try {
-      const user = localStorage.getItem('th_user');
+      const user = this.authService.currentUser;
       if (user) {
-        const u = JSON.parse(user);
-        if (u?.name) this.form.fullName = u.name;
-        if (u?.email) this.form.email = u.email;
+        if (user.name) this.form.fullName = user.name;
+        if (user.email) this.form.email = user.email;
       }
     } catch { /* ignore */ }
   }
@@ -178,18 +195,19 @@ export class Checkout implements OnInit, OnDestroy {
       },
     };
 
-    // Persist last order + append to order history
+    // Persist last order (global — used only by order-confirmation page immediately after)
     localStorage.setItem(CONFIRMED_ORDER_KEY, JSON.stringify(order));
 
+    // Append to the per-user order history
     try {
-      const raw = localStorage.getItem(ORDERS_STORAGE_KEY);
+      const raw = localStorage.getItem(this.userOrdersKey);
       const existing = raw ? JSON.parse(raw) : [];
       existing.unshift(order);
-      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(existing));
+      localStorage.setItem(this.userOrdersKey, JSON.stringify(existing));
     } catch { /* ignore */ }
 
-    // Clear cart
-    localStorage.removeItem(CART_STORAGE_KEY);
+    // Clear the per-user cart
+    localStorage.removeItem(this.userCartKey);
 
     // Simulate a brief processing delay then redirect
     this.orderTimer = setTimeout(() => {

@@ -1,8 +1,12 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule, TitleCasePipe } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { AuthService } from '../../services/auth.service';
+import { CartService } from '../../services/cart.service';
 
-// ── Re-use the Order types from profile.ts ────────────────────────────────────
+// ── Shared types ─────────────────────────────────────────────────────────────
+
 export interface OrderItem {
   name: string;
   category: string;
@@ -10,7 +14,7 @@ export interface OrderItem {
   price: number;
   quantity: number;
   size: string;
-  condition?: string;
+  condition: string;
 }
 
 export interface ShippingAddress {
@@ -18,75 +22,30 @@ export interface ShippingAddress {
   address: string;
   city: string;
   postalCode: string;
-  phone?: string;
+  phone: string;
 }
+
+export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
 
 export interface Order {
   id: string;
   date: string;
-  status: 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
-  items: OrderItem[];
+  status: OrderStatus;
   total: number;
+  items: OrderItem[];
   shippingAddress?: ShippingAddress;
 }
 
-export type OrderFilter = 'all' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
-
-// ── Storage keys ──────────────────────────────────────────────────────────────
-export const ORDERS_STORAGE_KEY = 'th_orders';
-export const CART_STORAGE_KEY = 'th_cart';
-
-// ── Constants ─────────────────────────────────────────────────────────────────
 const FREE_SHIPPING_THRESHOLD = 1500;
 const FLAT_SHIPPING_FEE = 120;
 
-// ── Mock orders (shown when localStorage has no data) ─────────────────────────
-// Root-cause guard: These ensure the page is never blank during development,
-// and they match the same data shape expected by the template.
-const MOCK_ORDERS: Order[] = [
-  {
-    id: 'TH-20260101',
-    date: '2026-01-15T10:30:00Z',
-    status: 'delivered',
-    total: 870,
-    items: [
-      { name: 'Yellow Hoodie', category: 'Tops', image: '/assets/images/yellow_hoodie.webp', price: 550, quantity: 1, size: 'M', condition: 'Pre-loved' },
-      { name: 'Grey T-Shirt', category: 'Tops', image: '/assets/images/grey_tshirt.webp', price: 200, quantity: 1, size: 'L', condition: 'Pre-loved' },
-    ],
-    shippingAddress: { fullName: 'Juan dela Cruz', address: '123 McArthur Hwy', city: 'Angeles City, Pampanga', postalCode: '2009', phone: '+63 917 123 4567' },
-  },
-  {
-    id: 'TH-20260215',
-    date: '2026-02-08T14:22:00Z',
-    status: 'shipped',
-    total: 750,
-    items: [
-      { name: 'Blue Jeans', category: 'Bottoms', image: '/assets/images/blue_jeans.webp', price: 400, quantity: 1, size: 'M', condition: 'Pre-loved' },
-      { name: 'Grey Sweatpants', category: 'Bottoms', image: '/assets/images/grey_sweatpants.webp', price: 250, quantity: 1, size: 'L', condition: 'Pre-loved' },
-    ],
-    shippingAddress: { fullName: 'Maria Santos', address: '456 Rizal St', city: 'Angeles City, Pampanga', postalCode: '2009' },
-  },
-  {
-    id: 'TH-20260312',
-    date: '2026-03-10T09:05:00Z',
-    status: 'confirmed',
-    total: 570,
-    items: [
-      { name: 'Vintage Long Sleeves', category: 'Tops', image: '/assets/images/vintage_long_sleeves.webp', price: 450, quantity: 1, size: 'S', condition: 'Pre-loved' },
-      { name: 'Grey T-Shirt', category: 'Tops', image: '/assets/images/grey_tshirt.webp', price: 200, quantity: 1, size: 'M', condition: 'Pre-loved' },
-    ],
-    shippingAddress: { fullName: 'Pedro Reyes', address: '789 Sto. Rosario St', city: 'Angeles City, Pampanga', postalCode: '2009' },
-  },
-  {
-    id: 'TH-20260220',
-    date: '2026-02-20T16:45:00Z',
-    status: 'cancelled',
-    total: 300,
-    items: [
-      { name: 'Vintage Shirt', category: 'Tops', image: '/assets/images/vintage_shirt.webp', price: 300, quantity: 1, size: 'L', condition: 'Pre-loved' },
-    ],
-  },
-];
+const STATUS_LABELS: Record<OrderStatus, string> = {
+  pending: 'Pending',
+  confirmed: 'Confirmed',
+  shipped: 'Shipped',
+  delivered: 'Delivered',
+  cancelled: 'Cancelled',
+};
 
 @Component({
   selector: 'app-order-history',
@@ -97,48 +56,69 @@ const MOCK_ORDERS: Order[] = [
 })
 export class OrderHistory implements OnInit, OnDestroy {
 
-  // ── Data ─────────────────────────────────────────────────────────
   orders: Order[] = [];
-
-  // ── Filter ───────────────────────────────────────────────────────
-  activeFilter: OrderFilter = 'all';
-
-  // ── Accordion ────────────────────────────────────────────────────
+  activeFilter: OrderStatus | 'all' = 'all';
   expandedOrderId: string | null = null;
 
-  // ── Toast ────────────────────────────────────────────────────────
   showToast = false;
   toastMessage = '';
   private toastTimer?: ReturnType<typeof setTimeout>;
 
+  private authSub?: Subscription;
+
+  constructor(
+    private authService: AuthService,
+    private cartService: CartService,
+    private router: Router,
+  ) { }
+
   ngOnInit(): void {
     this.loadOrders();
+
+    // Reload orders if the user changes (e.g. login / logout during the session)
+    this.authSub = this.authService.currentUser$.subscribe(() => {
+      this.loadOrders();
+    });
   }
 
   ngOnDestroy(): void {
     clearTimeout(this.toastTimer);
+    this.authSub?.unsubscribe();
   }
 
-  // ── Load from localStorage; fall back to mock data ───────────────
-  // Systematic debugging note: we validate the shape before accepting
-  // localStorage data to guard against stale/malformed payloads.
-  private loadOrders(): void {
-    try {
-      const raw = localStorage.getItem(ORDERS_STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as Order[];
-        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]?.id) {
-          this.orders = parsed;
-          return;
-        }
-      }
-    } catch {
-      // JSON.parse failed — fall through to mocks
+  // ── Per-user storage key ──────────────────────────────────────
+  private get userId(): string | null {
+    return this.authService.currentUser?.id ?? null;
+  }
+
+  private get userOrdersKey(): string {
+    return this.userId ? `th_orders_${this.userId}` : 'th_orders';
+  }
+
+  // ── Load orders ───────────────────────────────────────────────
+  loadOrders(): void {
+    // Reset filter / expand state on reload
+    this.activeFilter = 'all';
+    this.expandedOrderId = null;
+
+    if (!this.userId) {
+      // No logged-in user — show empty state (no mocks)
+      this.orders = [];
+      return;
     }
-    this.orders = MOCK_ORDERS;
+
+    try {
+      const raw = localStorage.getItem(this.userOrdersKey);
+      const parsed = raw ? JSON.parse(raw) : [];
+      // Validate it's a non-empty array
+      this.orders = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      this.orders = [];
+    }
+    // No mock fallback for authenticated users — show real empty state instead
   }
 
-  // ── Computed ──────────────────────────────────────────────────────
+  // ── Computed ──────────────────────────────────────────────────
   get filteredOrders(): Order[] {
     if (this.activeFilter === 'all') return this.orders;
     return this.orders.filter(o => o.status === this.activeFilter);
@@ -151,17 +131,16 @@ export class OrderHistory implements OnInit, OnDestroy {
   get totalSpent(): number {
     return this.orders
       .filter(o => o.status !== 'cancelled')
-      .reduce((sum, o) => sum + o.total, 0);
+      .reduce((s, o) => s + o.total, 0);
   }
 
-  // ── Filter ───────────────────────────────────────────────────────
-  setFilter(filter: OrderFilter): void {
+  // ── Filter ────────────────────────────────────────────────────
+  setFilter(filter: OrderStatus | 'all'): void {
     this.activeFilter = filter;
-    // Collapse any open card when filter changes
     this.expandedOrderId = null;
   }
 
-  // ── Accordion ────────────────────────────────────────────────────
+  // ── Expand / collapse ─────────────────────────────────────────
   toggleOrder(id: string): void {
     this.expandedOrderId = this.expandedOrderId === id ? null : id;
   }
@@ -170,75 +149,48 @@ export class OrderHistory implements OnInit, OnDestroy {
     return this.expandedOrderId === id;
   }
 
-  // ── Reorder: push items back to cart ─────────────────────────────
+  // ── Reorder ───────────────────────────────────────────────────
   reorder(order: Order): void {
-    try {
-      const raw = localStorage.getItem(CART_STORAGE_KEY);
-      const cart: any[] = raw ? JSON.parse(raw) : [];
-
-      order.items.forEach(item => {
-        const existing = cart.find(c => c.name === item.name && c.size === item.size);
-        if (existing) {
-          existing.quantity = Math.min(existing.quantity + item.quantity, 10);
-        } else {
-          cart.push({
-            _id: item.name.toLowerCase().replace(/\s+/g, '-'),
-            name: item.name,
-            category: item.category,
-            price: item.price,
-            image: item.image,
-            condition: item.condition ?? 'Pre-loved',
-            size: item.size,
-            quantity: item.quantity,
-            stock: 10,
-          });
-        }
+    order.items.forEach(item => {
+      this.cartService.addItem({
+        _id: item.name, // fallback — product ID not always stored on order items
+        name: item.name,
+        price: item.price,
+        image: item.image,
+        category: item.category,
+        condition: item.condition,
+        size: item.size,
+        stock: 99,
       });
-
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
-      this.triggerToast('Items added to your cart!');
-    } catch {
-      this.triggerToast('Could not add items to cart.');
-    }
+    });
+    this.toastMessage = 'Items added to your cart!';
+    this.showToast = true;
+    clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => (this.showToast = false), 2500);
+    this.router.navigate(['/cart']);
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────────────
   getSubtotal(order: Order): number {
     return order.items.reduce((s, i) => s + i.price * i.quantity, 0);
   }
 
   getShipping(order: Order): number {
-    const sub = this.getSubtotal(order);
-    return sub >= FREE_SHIPPING_THRESHOLD ? 0 : FLAT_SHIPPING_FEE;
+    const subtotal = this.getSubtotal(order);
+    return subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : FLAT_SHIPPING_FEE;
+  }
+
+  getStatusLabel(status: string): string {
+    return STATUS_LABELS[status as OrderStatus] ?? status;
   }
 
   formatPrice(n: number): string {
     return '₱' + n.toLocaleString('en-PH');
   }
 
-  formatDate(iso: string): string {
-    return new Date(iso).toLocaleDateString('en-PH', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+  formatDate(dateStr: string): string {
+    return new Date(dateStr).toLocaleDateString('en-PH', {
+      year: 'numeric', month: 'long', day: 'numeric',
     });
-  }
-
-  getStatusLabel(status: Order['status']): string {
-    const labels: Record<Order['status'], string> = {
-      confirmed: 'Confirmed',
-      shipped: 'Shipped',
-      delivered: 'Delivered',
-      cancelled: 'Cancelled',
-    };
-    return labels[status] ?? status;
-  }
-
-  // ── Toast ─────────────────────────────────────────────────────────
-  private triggerToast(msg: string): void {
-    this.toastMessage = msg;
-    this.showToast = true;
-    clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => (this.showToast = false), 3000);
   }
 }

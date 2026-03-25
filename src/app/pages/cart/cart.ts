@@ -1,26 +1,14 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { CartService, CartItem } from '../../services/cart.service';
 
-// ── Cart Item Interface ───────────────────────────────────────────────────────
-// Written to the 'th_cart' localStorage key by catalog/product-detail pages.
-export interface CartItem {
-  _id: string;       // MongoDB product ID
-  name: string;
-  price: number;
-  category: string;
-  image: string;     // single resolved image URL
-  condition: string;
-  size: string;      // selected size at time of add-to-cart
-  quantity: number;
-  stock: number;     // used to cap quantity increment
-}
+// Re-export CartItem so checkout.ts can import it from here (existing import path)
+export type { CartItem } from '../../services/cart.service';
 
-export const CART_STORAGE_KEY = 'th_cart';
-
-// ── Constants ─────────────────────────────────────────────────────────────────
-const FREE_SHIPPING_THRESHOLD = 1500; // ₱1,500
-const FLAT_SHIPPING_FEE = 120;        // ₱120
+const FREE_SHIPPING_THRESHOLD = 1500;
+const FLAT_SHIPPING_FEE = 120;
 
 @Component({
   selector: 'app-cart',
@@ -31,56 +19,48 @@ const FLAT_SHIPPING_FEE = 120;        // ₱120
 })
 export class Cart implements OnInit, OnDestroy {
 
-  // ── State ─────────────────────────────────────────────────────────────────
   items: CartItem[] = [];
+
   showToast = false;
   toastMessage = '';
-  removingId: string | null = null; // tracks which item has the confirm-remove UI
-
-  private toastTimer?: ReturnType<typeof setTimeout>;
 
   readonly FREE_SHIPPING_THRESHOLD = FREE_SHIPPING_THRESHOLD;
-  readonly FLAT_SHIPPING_FEE = FLAT_SHIPPING_FEE;
 
-  constructor(public router: Router) {}
+  private cartSub?: Subscription;
+  private toastTimer?: ReturnType<typeof setTimeout>;
+
+  constructor(
+    private cartService: CartService,
+    private router: Router,
+  ) { }
 
   ngOnInit(): void {
-    this.loadCart();
+    // Subscribe to the CartService reactive stream — always in sync with the
+    // correct per-user key, regardless of which account is logged in.
+    this.cartSub = this.cartService.cartItems$.subscribe(items => {
+      this.items = items;
+    });
   }
 
   ngOnDestroy(): void {
+    this.cartSub?.unsubscribe();
     clearTimeout(this.toastTimer);
   }
 
-  // ── Persistence ───────────────────────────────────────────────────────────
-  loadCart(): void {
-    try {
-      const raw = localStorage.getItem(CART_STORAGE_KEY);
-      this.items = raw ? JSON.parse(raw) : [];
-    } catch {
-      this.items = [];
-    }
-  }
-
-  private saveCart(): void {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(this.items));
-  }
-
-  // ── Computed ──────────────────────────────────────────────────────────────
+  // ── Computed ──────────────────────────────────────────────────
   get isEmpty(): boolean {
     return this.items.length === 0;
   }
 
   get itemCount(): number {
-    return this.items.reduce((sum, i) => sum + i.quantity, 0);
+    return this.items.reduce((s, i) => s + i.quantity, 0);
   }
 
   get subtotal(): number {
-    return this.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    return this.items.reduce((s, i) => s + i.price * i.quantity, 0);
   }
 
   get shippingFee(): number {
-    if (this.isEmpty) return 0;
     return this.subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : FLAT_SHIPPING_FEE;
   }
 
@@ -92,46 +72,33 @@ export class Cart implements OnInit, OnDestroy {
     return this.subtotal >= FREE_SHIPPING_THRESHOLD;
   }
 
-  get amountToFreeShipping(): number {
-    return Math.max(0, FREE_SHIPPING_THRESHOLD - this.subtotal);
-  }
-
-  // 0 → 100 progress toward the free-shipping threshold
   get freeShippingProgress(): number {
-    return Math.min(100, (this.subtotal / FREE_SHIPPING_THRESHOLD) * 100);
+    return Math.min((this.subtotal / FREE_SHIPPING_THRESHOLD) * 100, 100);
   }
 
-  // ── Cart Operations ───────────────────────────────────────────────────────
+  get amountToFreeShipping(): number {
+    return Math.max(FREE_SHIPPING_THRESHOLD - this.subtotal, 0);
+  }
+
+  // ── Actions ───────────────────────────────────────────────────
   increment(item: CartItem): void {
-    if (item.quantity < item.stock) {
-      item.quantity++;
-      this.saveCart();
-    }
+    this.cartService.updateQuantity(item._id, item.size, item.quantity + 1);
   }
 
   decrement(item: CartItem): void {
-    if (item.quantity > 1) {
-      item.quantity--;
-      this.saveCart();
-    }
+    this.cartService.updateQuantity(item._id, item.size, item.quantity - 1);
   }
 
   remove(item: CartItem): void {
-    const name = item.name;
-    this.items = this.items.filter(
-      (i) => !(i._id === item._id && i.size === item.size)
-    );
-    this.saveCart();
-    this.triggerToast(`${name} removed from cart.`);
+    this.cartService.removeItem(item._id, item.size);
+    this.showToastMsg(`${item.name} removed from cart.`);
   }
 
   clearCart(): void {
-    this.items = [];
-    this.saveCart();
-    this.triggerToast('Cart cleared.');
+    this.cartService.clearCart();
+    this.showToastMsg('Cart cleared.');
   }
 
-  // ── Navigation ────────────────────────────────────────────────────────────
   proceedToCheckout(): void {
     this.router.navigate(['/checkout']);
   }
@@ -140,68 +107,19 @@ export class Cart implements OnInit, OnDestroy {
     this.router.navigate(['/product', id]);
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  formatPrice(n: number): string {
-    return '₱' + n.toLocaleString('en-PH');
+  // ── Helpers ───────────────────────────────────────────────────
+  formatPrice(price: number): string {
+    return '₱' + price.toLocaleString('en-PH');
   }
 
   trackByItem(_: number, item: CartItem): string {
     return item._id + '|' + item.size;
   }
 
-  private triggerToast(msg: string): void {
+  private showToastMsg(msg: string): void {
     this.toastMessage = msg;
     this.showToast = true;
     clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => (this.showToast = false), 2800);
+    this.toastTimer = setTimeout(() => (this.showToast = false), 2500);
   }
 }
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// HOW TO WIRE addToCart IN catalog.ts
-// ─────────────────────────────────────────────────────────────────────────────
-// Replace the placeholder addToCart() in catalog.ts with this implementation:
-//
-//   import { CART_STORAGE_KEY, CartItem } from '../cart/cart';
-//
-//   addToCart(product: CatalogProduct, event: MouseEvent): void {
-//     event.stopPropagation();
-//
-//     const cart: CartItem[] = JSON.parse(
-//       localStorage.getItem(CART_STORAGE_KEY) ?? '[]'
-//     );
-//
-//     const size = Array.isArray(product.size)
-//       ? product.size[0] ?? 'Free Size'
-//       : product.size ?? 'Free Size';
-//
-//     const key = product._id + '|' + size;
-//     const existing = cart.find(
-//       (i) => i._id === product._id && i.size === size
-//     );
-//
-//     if (existing) {
-//       if (existing.quantity < product.stock) existing.quantity++;
-//     } else {
-//       cart.push({
-//         _id:       product._id,
-//         name:      product.name,
-//         price:     product.price,
-//         category:  product.category,
-//         image:     product.images?.[0] ?? '',
-//         condition: product.condition,
-//         size,
-//         quantity:  1,
-//         stock:     product.stock,
-//       });
-//     }
-//
-//     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
-//
-//     this.toastMessage = `${product.name} added to cart!`;
-//     this.showToast = true;
-//     clearTimeout(this.toastTimer);
-//     this.toastTimer = setTimeout(() => (this.showToast = false), 2500);
-//   }
-// ─────────────────────────────────────────────────────────────────────────────

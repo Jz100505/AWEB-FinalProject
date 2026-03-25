@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { AuthService } from './auth.service';
 
 export interface CartItem {
     _id: string;
@@ -13,21 +14,35 @@ export interface CartItem {
     stock: number;
 }
 
+/** Returns the per-user cart key, or the legacy key when no user is logged in. */
+export function cartKey(userId: string | null | undefined): string {
+    return userId ? `th_cart_${userId}` : 'th_cart';
+}
+
+/** Legacy constant kept so existing imports in checkout.ts / order-history.ts don't break. */
 export const CART_STORAGE_KEY = 'th_cart';
 
 @Injectable({ providedIn: 'root' })
 export class CartService {
 
-    private items: CartItem[] = this.loadFromStorage();
+    private items: CartItem[] = [];
 
-    private cartCountSubject = new BehaviorSubject<number>(this.calcCount());
-    private cartItemsSubject = new BehaviorSubject<CartItem[]>([...this.items]);
+    private cartCountSubject = new BehaviorSubject<number>(0);
+    private cartItemsSubject = new BehaviorSubject<CartItem[]>([]);
 
     /** Total number of units across all line items */
     cartCount$: Observable<number> = this.cartCountSubject.asObservable();
 
     /** Full cart item array */
     cartItems$: Observable<CartItem[]> = this.cartItemsSubject.asObservable();
+
+    constructor(private authService: AuthService) {
+        // Re-load cart whenever the logged-in user changes (login / logout).
+        this.authService.currentUser$.subscribe(() => {
+            this.items = this.loadFromStorage();
+            this.publish();
+        });
+    }
 
     // ── Public API ──────────────────────────────────────────────────────────
 
@@ -87,23 +102,31 @@ export class CartService {
 
     // ── Private ─────────────────────────────────────────────────────────────
 
+    private get storageKey(): string {
+        return cartKey(this.authService.currentUser?.id);
+    }
+
     private calcCount(): number {
         return this.items.reduce((sum, i) => sum + i.quantity, 0);
     }
 
-    private persist(): void {
-        try {
-            localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(this.items));
-        } catch {
-            // localStorage unavailable — silently ignore
-        }
+    private publish(): void {
         this.cartCountSubject.next(this.calcCount());
         this.cartItemsSubject.next([...this.items]);
     }
 
+    private persist(): void {
+        try {
+            localStorage.setItem(this.storageKey, JSON.stringify(this.items));
+        } catch {
+            // localStorage unavailable — silently ignore
+        }
+        this.publish();
+    }
+
     private loadFromStorage(): CartItem[] {
         try {
-            const raw = localStorage.getItem(CART_STORAGE_KEY);
+            const raw = localStorage.getItem(this.storageKey);
             return raw ? (JSON.parse(raw) as CartItem[]) : [];
         } catch {
             return [];

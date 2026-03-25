@@ -1,29 +1,49 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { RouterModule, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { CartService } from '../../services/cart.service';
-import { Order, ORDERS_STORAGE_KEY } from '../order-history/order-history';
+import { Order } from '../order-history/order-history';
 
-export type ProfileTab = 'account' | 'orders' | 'settings';
+type Tab = 'account' | 'orders' | 'settings';
+type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+
+const FREE_SHIPPING_THRESHOLD = 1500;
+const FLAT_SHIPPING_FEE = 120;
+
+const STATUS_LABELS: Record<OrderStatus, string> = {
+  pending: 'Pending',
+  confirmed: 'Confirmed',
+  shipped: 'Shipped',
+  delivered: 'Delivered',
+  cancelled: 'Cancelled',
+};
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
 export class Profile implements OnInit, OnDestroy {
 
-  // ── Tab state ─────────────────────────────────────────────
-  activeTab: ProfileTab = 'account';
+  // ── User ──────────────────────────────────────────────────────
+  user = { name: 'Guest', email: '' };
 
-  // ── User data ─────────────────────────────────────────────
-  user = { name: 'Guest User', email: 'guest@thrifthub.ph' };
+  // ── Tab ───────────────────────────────────────────────────────
+  activeTab: Tab = 'account';
 
-  // ── Editable fields ───────────────────────────────────────
+  // ── Orders ────────────────────────────────────────────────────
+  orders: Order[] = [];
+  expandedOrderIds = new Set<string>();
+
+  // ── Cart ──────────────────────────────────────────────────────
+  cartItemCount = 0;
+
+  // ── Form (Account Info) ───────────────────────────────────────
   editName = '';
   editEmail = '';
   editPhone = '';
@@ -31,108 +51,120 @@ export class Profile implements OnInit, OnDestroy {
   editCity = '';
   editPostal = '';
 
-  currentPassword = '';
-  newPassword = '';
-  confirmPassword = '';
-
-  showCurrentPass = false;
-  showNewPass = false;
-  showConfirmPass = false;
-
-  // ── Orders ────────────────────────────────────────────────
-  orders: Order[] = [];
-  expandedOrderId: string | null = null;
-
-  // ── UI state ──────────────────────────────────────────────
   isSaving = false;
   saveSuccess = false;
   saveError = '';
+
+  // ── Settings (Password) ───────────────────────────────────────
+  currentPassword = '';
+  newPassword = '';
+  confirmPassword = '';
+  showCurrentPass = false;
+  showNewPass = false;
+  showConfirmPass = false;
 
   isChangingPass = false;
   passSuccess = false;
   passError = '';
 
+  // ── Modal / toast ─────────────────────────────────────────────
   showLogoutConfirm = false;
-
-  toastMessage = '';
   showToast = false;
+  toastMessage = '';
+
   private toastTimer?: ReturnType<typeof setTimeout>;
+  private cartSub?: Subscription;
 
   constructor(
-    private auth: AuthService,
+    private authService: AuthService,
     private cartService: CartService,
     private router: Router,
   ) { }
 
   ngOnInit(): void {
-    // 1. Try AuthService public Observable/signal first (cleanest)
-    try {
-      const liveUser = (this.auth as any).currentUser$?.getValue?.()
-        ?? (this.auth as any).user$?.getValue?.()
-        ?? (this.auth as any).currentUser
-        ?? (this.auth as any).user
-        ?? null;
-
-      if (liveUser?.name || liveUser?.email) {
-        this.user = {
-          name: liveUser.name ?? 'Thrift Fan',
-          email: liveUser.email ?? '',
-        };
-        this.editName = this.user.name;
-        this.editEmail = this.user.email;
-        this.loadOrders();
-        return;
-      }
-    } catch { /* AuthService shape unknown — fall through */ }
-
-    // 2. Try every storage key the app might use
-    const CANDIDATE_KEYS = [
-      'thrifthub_user',
-      'th_user',
-      'user',
-      'currentUser',
-      'auth_user',
-      'session_user',
-    ];
-
-    try {
-      for (const key of CANDIDATE_KEYS) {
-        const raw = sessionStorage.getItem(key) ?? localStorage.getItem(key);
-        if (!raw) continue;
-        const parsed = JSON.parse(raw);
-        // Accept if it looks like a user object
-        if (parsed && (parsed.name || parsed.email)) {
-          this.user = {
-            name: parsed.name ?? parsed.username ?? 'Thrift Fan',
-            email: parsed.email ?? '',
-          };
-          break;
-        }
-      }
-    } catch {
-      // Stay with default guest values
+    const u = this.authService.currentUser;
+    if (!u) {
+      this.router.navigate(['/login']);
+      return;
     }
 
-    this.editName = this.user.name;
-    this.editEmail = this.user.email;
+    this.user = { name: u.name, email: u.email };
+    this.editName = u.name;
+    this.editEmail = u.email;
+
+    // Load profile extras from per-user storage
+    this.loadProfileExtras();
     this.loadOrders();
+
+    this.cartSub = this.cartService.cartCount$.subscribe(count => {
+      this.cartItemCount = count;
+    });
   }
 
   ngOnDestroy(): void {
     clearTimeout(this.toastTimer);
+    this.cartSub?.unsubscribe();
   }
 
-  // ── Tab navigation ────────────────────────────────────────
-  setTab(tab: ProfileTab): void {
-    this.activeTab = tab;
-    this.saveSuccess = false;
-    this.saveError = '';
-    this.passSuccess = false;
-    this.passError = '';
+  // ── Per-user storage key ──────────────────────────────────────
+  private get userId(): string {
+    return this.authService.currentUser?.id ?? 'guest';
   }
 
-  // ── Stats ─────────────────────────────────────────────────
-  get totalOrders(): number { return this.orders.length; }
+  private get userOrdersKey(): string {
+    return `th_orders_${this.userId}`;
+  }
+
+  private get userProfileKey(): string {
+    return `th_profile_${this.userId}`;
+  }
+
+  // ── Data loaders ──────────────────────────────────────────────
+  private loadProfileExtras(): void {
+    try {
+      const raw = localStorage.getItem(this.userProfileKey);
+      if (raw) {
+        const p = JSON.parse(raw);
+        this.editPhone = p.phone ?? '';
+        this.editAddress = p.address ?? '';
+        this.editCity = p.city ?? '';
+        this.editPostal = p.postal ?? '';
+      }
+    } catch { /* ignore */ }
+  }
+
+  loadOrders(): void {
+    try {
+      const raw = localStorage.getItem(this.userOrdersKey);
+      const parsed = raw ? JSON.parse(raw) : [];
+      this.orders = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      this.orders = [];
+    }
+  }
+
+  // ── Computed ──────────────────────────────────────────────────
+  get initials(): string {
+    return this.user.name
+      .split(' ')
+      .map(w => w[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  }
+
+  get memberSince(): string {
+    // Could be stored in user object; fall back to current year
+    return new Date().getFullYear().toString();
+  }
+
+  get recentOrders(): Order[] {
+    return this.orders.slice(0, 3);
+  }
+
+  get totalOrders(): number {
+    return this.orders.length;
+  }
 
   get totalSpent(): number {
     return this.orders
@@ -140,51 +172,65 @@ export class Profile implements OnInit, OnDestroy {
       .reduce((s, o) => s + o.total, 0);
   }
 
-  // Most recent 3 orders — shown as a preview on the profile tab
-  get recentOrders(): Order[] {
-    return this.orders.slice(0, 3);
-  }
-
-  get cartItemCount(): number { return this.cartService.getCount(); }
-
-  get memberSince(): string {
-    return 'March 2026';
-  }
-
-  // ── Initials avatar ───────────────────────────────────────
-  get initials(): string {
-    return this.user.name
-      .split(' ')
-      .map(w => w[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase();
-  }
-
-  // ── Profile save ──────────────────────────────────────────
-  saveProfile(): void {
+  // ── Tab ───────────────────────────────────────────────────────
+  setTab(tab: Tab): void {
+    this.activeTab = tab;
+    this.saveSuccess = false;
     this.saveError = '';
-    if (!this.editName.trim()) { this.saveError = 'Name cannot be empty.'; return; }
-    if (!this.editEmail.trim() || !this.editEmail.includes('@')) {
-      this.saveError = 'Please enter a valid email.'; return;
-    }
-    this.isSaving = true;
-    setTimeout(() => {
-      this.user.name = this.editName.trim();
-      this.user.email = this.editEmail.trim();
-      this.isSaving = false;
-      this.saveSuccess = true;
-      this.toast('Profile updated successfully!');
-      setTimeout(() => (this.saveSuccess = false), 3000);
-    }, 1000);
+    this.passSuccess = false;
+    this.passError = '';
   }
 
-  // ── Password change ───────────────────────────────────────
+  // ── Profile save ──────────────────────────────────────────────
+  saveProfile(): void {
+    if (!this.editName.trim() || !this.editEmail.trim()) {
+      this.saveError = 'Name and email are required.';
+      return;
+    }
+
+    this.isSaving = true;
+    this.saveError = '';
+
+    setTimeout(() => {
+      try {
+        // Persist extras to per-user profile key
+        localStorage.setItem(this.userProfileKey, JSON.stringify({
+          phone: this.editPhone,
+          address: this.editAddress,
+          city: this.editCity,
+          postal: this.editPostal,
+        }));
+
+        this.user.name = this.editName.trim();
+        this.user.email = this.editEmail.trim();
+        this.isSaving = false;
+        this.saveSuccess = true;
+        setTimeout(() => (this.saveSuccess = false), 3000);
+      } catch {
+        this.isSaving = false;
+        this.saveError = 'Could not save changes. Please try again.';
+      }
+    }, 800);
+  }
+
+  // ── Password change (simulated) ───────────────────────────────
   changePassword(): void {
     this.passError = '';
-    if (!this.currentPassword) { this.passError = 'Enter your current password.'; return; }
-    if (this.newPassword.length < 8) { this.passError = 'New password must be at least 8 characters.'; return; }
-    if (this.newPassword !== this.confirmPassword) { this.passError = 'Passwords do not match.'; return; }
+    this.passSuccess = false;
+
+    if (!this.currentPassword) {
+      this.passError = 'Please enter your current password.';
+      return;
+    }
+    if (this.newPassword.length < 8) {
+      this.passError = 'New password must be at least 8 characters.';
+      return;
+    }
+    if (this.newPassword !== this.confirmPassword) {
+      this.passError = 'New passwords do not match.';
+      return;
+    }
+
     this.isChangingPass = true;
     setTimeout(() => {
       this.isChangingPass = false;
@@ -192,62 +238,53 @@ export class Profile implements OnInit, OnDestroy {
       this.currentPassword = '';
       this.newPassword = '';
       this.confirmPassword = '';
-      this.toast('Password changed successfully!');
       setTimeout(() => (this.passSuccess = false), 3000);
-    }, 1000);
+    }, 900);
   }
 
-  // ── Orders ────────────────────────────────────────────────
-  private loadOrders(): void {
-    try {
-      const raw = localStorage.getItem(ORDERS_STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as Order[];
-        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]?.id) {
-          this.orders = parsed;
-          return;
-        }
-      }
-    } catch { /* fall through — orders stay empty */ }
-    this.orders = [];
+  // ── Order expand ──────────────────────────────────────────────
+  toggleOrder(id: string): void {
+    if (this.expandedOrderIds.has(id)) {
+      this.expandedOrderIds.delete(id);
+    } else {
+      this.expandedOrderIds.add(id);
+    }
+  }
+
+  isOrderExpanded(id: string): boolean {
+    return this.expandedOrderIds.has(id);
   }
 
   navigateToOrderHistory(): void {
     this.router.navigate(['/order-history']);
   }
 
-  toggleOrder(id: string): void {
-    this.expandedOrderId = this.expandedOrderId === id ? null : id;
+  // ── Logout ────────────────────────────────────────────────────
+  confirmLogout(): void {
+    this.showLogoutConfirm = true;
   }
 
-  isOrderExpanded(id: string): boolean { return this.expandedOrderId === id; }
-
-  formatDate(iso: string): string {
-    return new Date(iso).toLocaleDateString('en-PH', {
-      year: 'numeric', month: 'long', day: 'numeric',
-    });
+  cancelLogout(): void {
+    this.showLogoutConfirm = false;
   }
-
-  formatPrice(n: number): string { return '₱' + n.toLocaleString('en-PH'); }
-
-  getStatusLabel(status: Order['status']): string {
-    return { confirmed: 'Confirmed', shipped: 'Shipped', delivered: 'Delivered', cancelled: 'Cancelled' }[status];
-  }
-
-  // ── Logout ────────────────────────────────────────────────
-  confirmLogout(): void { this.showLogoutConfirm = true; }
-  cancelLogout(): void { this.showLogoutConfirm = false; }
 
   logout(): void {
-    this.auth.logout();
-    this.router.navigate(['/login']);
+    this.showLogoutConfirm = false;
+    this.authService.logout();
   }
 
-  // ── Toast ─────────────────────────────────────────────────
-  private toast(msg: string): void {
-    this.toastMessage = msg;
-    this.showToast = true;
-    clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => (this.showToast = false), 3000);
+  // ── Helpers ───────────────────────────────────────────────────
+  getStatusLabel(status: string): string {
+    return STATUS_LABELS[status as OrderStatus] ?? status;
+  }
+
+  formatPrice(n: number): string {
+    return '₱' + n.toLocaleString('en-PH');
+  }
+
+  formatDate(dateStr: string): string {
+    return new Date(dateStr).toLocaleDateString('en-PH', {
+      year: 'numeric', month: 'short', day: 'numeric',
+    });
   }
 }
