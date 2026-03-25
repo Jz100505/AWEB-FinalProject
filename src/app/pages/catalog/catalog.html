@@ -1,1 +1,306 @@
-<p>catalog works!</p>
+<!-- ================================================================
+     THRIFTHUB — CATALOG / SHOP PAGE
+     Sections: Hero → Filter Bar → Product Grid → Pagination → Toast
+     ================================================================ -->
+
+<div class="cat-page">
+
+    <!-- ── HERO ──────────────────────────────────────────────────────── -->
+    <section class="cat-hero" aria-label="Shop hero">
+        <div class="cat-hero__bg">
+            <img src="assets/images/shop_hero.webp" alt="" class="cat-hero__img" loading="eager" />
+            <div class="cat-hero__overlay" aria-hidden="true"></div>
+        </div>
+
+        <div class="cat-hero__content">
+            <div class="cat-hero__eyebrow">
+                <span class="cat-tag">{{ allProducts.length }}+ Items Available</span>
+            </div>
+            <h1 class="cat-hero__title">
+                THE<br>
+                <span class="cat-hero__title--accent">SHOP.</span>
+            </h1>
+            <p class="cat-hero__sub">
+                All the fits. All the prices.<br>
+                Curated ukay finds — fresh every week.
+            </p>
+            <button class="cat-btn cat-btn--primary" (click)="scrollToGrid()">
+                Browse Collection
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="cat-hero__scroll" aria-hidden="true">
+            <span class="cat-scroll-line"></span>
+            <span class="cat-scroll-text">SCROLL</span>
+        </div>
+    </section>
+
+    <!-- ── FILTER BAR ─────────────────────────────────────────────────── -->
+    <div class="cat-filter-bar" id="cat-grid">
+        <div class="cat-filter-bar__inner container">
+
+            <!-- Row 1: Search + Sort -->
+            <div class="cat-filter-row cat-filter-row--top">
+                <div class="cat-search-wrap">
+                    <svg class="cat-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                    </svg>
+                    <input type="search" class="cat-search-input" placeholder="Search products, sizes…"
+                        [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()" aria-label="Search products" />
+                    @if (searchQuery) {
+                    <button class="cat-search-clear" (click)="searchQuery=''; onSearchChange()"
+                        aria-label="Clear search">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" aria-hidden="true">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
+                    }
+                </div>
+
+                <div class="cat-sort-wrap">
+                    <label for="cat-sort" class="cat-sort-label">Sort by</label>
+                    <select id="cat-sort" class="cat-sort-select" [(ngModel)]="sortOption"
+                        (ngModelChange)="onSortChange()">
+                        <option value="newest">Newest First</option>
+                        <option value="price-desc">Price: High to Low</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Row 2: All filter pills -->
+            <div class="cat-filter-row cat-filter-row--filters">
+
+                <!-- Category -->
+                <div class="cat-filter-group">
+                    <span class="cat-filter-label">Category</span>
+                    <div class="cat-pills">
+                        <button class="cat-pill" [class.cat-pill--active]="selectedCategory === 'all'"
+                            (click)="setCategory('all')">All</button>
+                        @for (cat of categories; track cat) {
+                        <button class="cat-pill" [class.cat-pill--active]="selectedCategory === cat"
+                            (click)="setCategory(cat)">{{ cat }}</button>
+                        }
+                    </div>
+                </div>
+
+                <!-- Price Range -->
+                <div class="cat-filter-group">
+                    <span class="cat-filter-label">Price</span>
+                    <div class="cat-pills">
+                        <button class="cat-pill" [class.cat-pill--active]="selectedPriceRange === 'all'"
+                            (click)="setPriceRange('all')">All</button>
+                        <button class="cat-pill" [class.cat-pill--active]="selectedPriceRange === 'under300'"
+                            (click)="setPriceRange('under300')">Under ₱300</button>
+                        <button class="cat-pill" [class.cat-pill--active]="selectedPriceRange === '300to500'"
+                            (click)="setPriceRange('300to500')">₱300 – ₱500</button>
+                        <button class="cat-pill" [class.cat-pill--active]="selectedPriceRange === 'over500'"
+                            (click)="setPriceRange('over500')">Over ₱500</button>
+                    </div>
+                </div>
+
+                <!-- Sizes -->
+                <div class="cat-filter-group">
+                    <span class="cat-filter-label">Size</span>
+                    <div class="cat-pills">
+                        @for (size of availableSizes; track size) {
+                        <button class="cat-pill" [class.cat-pill--active]="isSizeSelected(size)"
+                            (click)="toggleSize(size)">{{ size }}</button>
+                        }
+                    </div>
+                </div>
+
+                <!-- Availability + Clear -->
+                <div class="cat-filter-group cat-filter-group--end">
+                    <button class="cat-pill cat-pill--toggle" [class.cat-pill--active]="showAvailableOnly"
+                        (click)="toggleAvailability()">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" aria-hidden="true">
+                            <path d="M20 6L9 17l-5-5" />
+                        </svg>
+                        In Stock Only
+                    </button>
+                    @if (hasActiveFilters) {
+                    <button class="cat-clear-btn" (click)="clearFilters()">
+                        Clear All
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" aria-hidden="true">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
+                    }
+                </div>
+            </div>
+
+            <!-- Results + active filter tags -->
+            <div class="cat-results-bar">
+                @if (!isLoading) {
+                <span class="cat-results-count">
+                    Showing <strong>{{ paginatedProducts.length }}</strong>
+                    of <strong>{{ filteredProducts.length }}</strong> products
+                </span>
+                @if (hasActiveFilters) {
+                <div class="cat-active-tags">
+                    @if (selectedCategory !== 'all') {
+                    <span class="cat-active-tag">
+                        {{ selectedCategory }}
+                        <button (click)="setCategory('all')" aria-label="Remove category filter">×</button>
+                    </span>
+                    }
+                    @if (selectedPriceRange !== 'all') {
+                    <span class="cat-active-tag">
+                        {{ selectedPriceRange === 'under300' ? 'Under ₱300' :
+                        selectedPriceRange === '300to500' ? '₱300–₱500' : 'Over ₱500' }}
+                        <button (click)="setPriceRange('all')" aria-label="Remove price filter">×</button>
+                    </span>
+                    }
+                    @for (sz of selectedSizes; track sz) {
+                    <span class="cat-active-tag">
+                        {{ sz }}
+                        <button (click)="toggleSize(sz)" [attr.aria-label]="'Remove ' + sz + ' filter'">×</button>
+                    </span>
+                    }
+                    @if (showAvailableOnly) {
+                    <span class="cat-active-tag">
+                        In Stock
+                        <button (click)="toggleAvailability()" aria-label="Remove availability filter">×</button>
+                    </span>
+                    }
+                </div>
+                }
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- ── PRODUCT GRID ───────────────────────────────────────────────── -->
+    <section class="cat-grid-section" aria-label="Products">
+        <div class="container">
+
+            <!-- Skeleton loaders -->
+            @if (isLoading) {
+            <div class="cat-grid">
+                @for (s of skeletonItems; track $index) {
+                <div class="cat-skeleton-card" aria-hidden="true">
+                    <div class="cat-skeleton cat-skeleton--img"></div>
+                    <div class="cat-skeleton-body">
+                        <div class="cat-skeleton cat-skeleton--line" style="width:38%"></div>
+                        <div class="cat-skeleton cat-skeleton--line" style="width:72%"></div>
+                        <div class="cat-skeleton cat-skeleton--line" style="width:52%"></div>
+                        <div class="cat-skeleton cat-skeleton--btn"></div>
+                    </div>
+                </div>
+                }
+            </div>
+            }
+
+            <!-- Empty state -->
+            @if (!isLoading && filteredProducts.length === 0) {
+            <div class="cat-empty" role="status">
+                <div class="cat-empty__icon" aria-hidden="true">
+                    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="1.3">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                        <line x1="8" y1="11" x2="14" y2="11" />
+                    </svg>
+                </div>
+                <h3 class="cat-empty__title">No products found</h3>
+                <p class="cat-empty__sub">Try adjusting your filters or clearing your search.</p>
+                <button class="cat-btn cat-btn--outline" (click)="clearFilters()">Clear All Filters</button>
+            </div>
+            }
+
+            <!-- Products -->
+            @if (!isLoading && paginatedProducts.length > 0) {
+            <div class="cat-grid">
+                @for (product of paginatedProducts; track trackById($index, product)) {
+                <article class="cat-card" (click)="router.navigate(['/product', product._id])"
+                    (keydown.enter)="router.navigate(['/product', product._id])"
+                    [attr.aria-label]="product.name + ' — ' + formatPrice(product.price)" tabindex="0" role="article">
+
+                    <div class="cat-card__img-wrap">
+                        <img [src]="getProductImage(product)" [alt]="product.name" class="cat-card__img"
+                            loading="lazy" />
+                        <span class="cat-card__badge">{{ product.condition }}</span>
+                        @if (product.stock === 0) {
+                        <div class="cat-card__oos" aria-label="Out of stock">Out of Stock</div>
+                        }
+                    </div>
+
+                    <div class="cat-card__body">
+                        <span class="cat-card__category">{{ product.category }}</span>
+                        <h3 class="cat-card__name">{{ product.name }}</h3>
+
+                        <div class="cat-card__meta">
+                            <span class="cat-card__price">{{ formatPrice(product.price) }}</span>
+                            <div class="cat-card__sizes">
+                                @for (size of getSizes(product).slice(0, 2); track size) {
+                                <span class="cat-size-chip">{{ size }}</span>
+                                }
+                            </div>
+                        </div>
+
+                        <button class="cat-card__cta" [disabled]="product.stock === 0"
+                            (click)="addToCart(product, $event)" [attr.aria-label]="'Add ' + product.name + ' to cart'"
+                            type="button">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" aria-hidden="true">
+                                <circle cx="9" cy="21" r="1" />
+                                <circle cx="20" cy="21" r="1" />
+                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                            </svg>
+                            Add to Cart
+                        </button>
+                    </div>
+                </article>
+                }
+            </div>
+            }
+
+            <!-- Pagination -->
+            @if (!isLoading && totalPages > 1) {
+            <nav class="cat-pagination" aria-label="Product page navigation">
+                <button class="cat-page-btn cat-page-btn--arrow" [disabled]="currentPage === 1"
+                    (click)="goToPage(currentPage - 1)" aria-label="Previous page">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        aria-hidden="true">
+                        <path d="M15 18l-6-6 6-6" />
+                    </svg>
+                </button>
+                @for (page of pageNumbers; track page) {
+                <button class="cat-page-btn" [class.cat-page-btn--active]="currentPage === page"
+                    (click)="goToPage(page)" [attr.aria-current]="currentPage === page ? 'page' : null"
+                    [attr.aria-label]="'Page ' + page">{{ page }}</button>
+                }
+                <button class="cat-page-btn cat-page-btn--arrow" [disabled]="currentPage === totalPages"
+                    (click)="goToPage(currentPage + 1)" aria-label="Next page">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        aria-hidden="true">
+                        <path d="M9 18l6-6-6-6" />
+                    </svg>
+                </button>
+            </nav>
+            }
+
+        </div>
+    </section>
+
+    <!-- ── TOAST ──────────────────────────────────────────────────────── -->
+    <div class="cat-toast" [class.cat-toast--show]="showToast" role="status" aria-live="polite">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            aria-hidden="true">
+            <path d="M20 6L9 17l-5-5" />
+        </svg>
+        {{ toastMessage }}
+    </div>
+
+</div>

@@ -986,3 +986,33 @@
         animation: none;
     }
 }
+
+/* ─────────────────────────────────────────────────────────
+   PATCH: home.css — product grid column change
+   Replace the existing .th-products__grid rule with this.
+   ───────────────────────────────────────────────────────── */
+
+.th-products__grid {
+    display: grid;
+    /* 3 columns on desktop for 3 featured cards */
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: auto;
+    gap: 24px;
+    overflow: visible;
+}
+
+/* Tablet: 2 columns */
+@media (max-width: 1024px) and (min-width: 601px) {
+    .th-products__grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+}
+
+/* Mobile: 1 column */
+@media (max-width: 600px) {
+    .th-products__grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+}

@@ -167,11 +167,7 @@
                 @for (product of featuredProducts; track trackByProduct($index, product)) {
                 <article class="th-product-card" [routerLink]="['/product', product._id]">
                     <div class="th-product-card__img-wrap">
-                        <!--
-                          FIX: use getProductImage(product, $index) instead of a single fallback.
-                          Each card now gets a unique placeholder when no DB image is stored,
-                          cycling through the four hero images by card position.
-                        -->
+
                         <img [src]="getProductImage(product, $index)" [alt]="product.name" class="th-product-card__img"
                             loading="lazy" />
                         <span class="th-product-card__condition">{{ product.condition }}</span>

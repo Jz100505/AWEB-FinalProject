@@ -22,15 +22,24 @@ interface Testimonial {
   avatar: string;
 }
 
-// ── Fallback images used ONLY when a product has no image in MongoDB ──
-// Each card gets a unique placeholder by cycling through this list with
-// its position index, so no two adjacent cards ever look the same.
-const PLACEHOLDER_IMAGES = [
-  '/assets/images/hero_main_editorial.webp',
-  '/assets/images/hero_img_0.webp',
-  '/assets/images/hero_img_1.webp',
-  '/assets/images/home_split_a.webp',
-];
+/**
+ * Maps a product name to its corresponding image filename in
+ * /assets/images/. Converts "Grey T-Shirt Imprint" → "grey_tshirt_imprint.webp"
+ * by lowercasing, stripping hyphens, and replacing spaces with underscores.
+ * Falls back to featured_product_a.webp when no match is found.
+ */
+function resolveLocalImage(productName: string): string {
+  const base = productName
+    .toLowerCase()
+    .replace(/-/g, '')        // remove hyphens: "t-shirt" → "tshirt"
+    .replace(/\s+/g, '_')    // spaces → underscores: "grey tshirt" → "grey_tshirt"
+    .replace(/[^a-z0-9_]/g, ''); // strip remaining special chars
+
+  return `/assets/images/${base}.webp`;
+}
+
+// Safety fallback if the derived filename doesn't exist on disk
+const FALLBACK_IMAGE = '/assets/images/featured_product_a.webp';
 
 @Component({
   selector: 'app-home',
@@ -119,9 +128,10 @@ export class Home implements OnInit {
     this.isLoadingProducts = true;
     this.productsError = false;
 
-    this.http.get<Product[]>('/api/products?limit=8').subscribe({
+    // Fetch only 3 featured products for the home page preview
+    this.http.get<Product[]>('/api/products?limit=3').subscribe({
       next: (products) => {
-        this.featuredProducts = products.slice(0, 8);
+        this.featuredProducts = products.slice(0, 3);
         this.isLoadingProducts = false;
       },
       error: () => {
@@ -134,18 +144,24 @@ export class Home implements OnInit {
   /**
    * Returns the display image URL for a product card.
    *
-   * The API (products.js) now resolves all image URLs before sending them,
-   * so `product.images[0]` is always a ready-to-use URL when present.
-   * We only fall back to a placeholder when MongoDB has no image stored,
-   * cycling by card index so each card looks visually distinct.
+   * Priority order:
+   *   1. Image URL already resolved by the API (stored in MongoDB)
+   *   2. Derived from the product name → "Grey T-Shirt" → grey_tshirt.webp
+   *   3. Generic fallback if neither exists
    */
-  getProductImage(product: Product, index: number): string {
+  getProductImage(product: Product, _index: number): string {
+    // 1. API-resolved image takes priority
     if (product.images && product.images[0]) {
-      // Already a full URL resolved by the API — use directly, no prefix needed
       return product.images[0];
     }
-    // No image in DB → unique placeholder per card position
-    return PLACEHOLDER_IMAGES[index % PLACEHOLDER_IMAGES.length];
+
+    // 2. Derive filename from product name so it always matches the right asset
+    if (product.name) {
+      return resolveLocalImage(product.name);
+    }
+
+    // 3. Last-resort fallback
+    return FALLBACK_IMAGE;
   }
 
   submitNewsletter(): void {
