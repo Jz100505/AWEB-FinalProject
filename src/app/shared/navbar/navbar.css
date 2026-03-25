@@ -219,6 +219,17 @@
     letter-spacing: 0.02em;
 }
 
+/* ── Profile Icon Button ──────────────────────────────────── */
+.profile-icon-btn {
+    text-decoration: none;
+}
+
+.profile-icon-btn:hover {
+    background: rgba(245, 166, 35, 0.1);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
 /* ── Auth Buttons ─────────────────────────────────────────── */
 .btn-nav-login {
     font-family: var(--font-body);
@@ -636,9 +647,7 @@
 @media (max-width: 768px) {
 
     .navbar-nav,
-    .btn-nav-login,
-    .btn-nav-signup,
-    .user-menu {
+    .profile-icon-btn {
         display: none;
     }
 
