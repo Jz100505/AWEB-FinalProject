@@ -10,6 +10,8 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { CartService } from '../../services/cart.service';
 
 @Component({
   selector: 'app-navbar',
@@ -32,22 +34,30 @@ export class NavbarComponent implements OnInit, OnDestroy, AfterViewInit {
 
   @ViewChild('searchInput') searchInputRef!: ElementRef<HTMLInputElement>;
 
-  constructor(private router: Router) { }
+  private cartSub?: Subscription;
+
+  constructor(
+    private router: Router,
+    private cartService: CartService,
+  ) { }
 
   ngOnInit(): void {
+    this.cartSub = this.cartService.cartCount$.subscribe(count => {
+      this.cartCount = count;
+    });
+
     // TODO: Replace with AuthService subscription
     // this.authService.currentUser$.subscribe(user => {
     //   this.isLoggedIn = !!user;
     //   this.userInitial = user?.name?.charAt(0).toUpperCase() ?? 'U';
     // });
-
-    // TODO: Replace with CartService subscription
-    // this.cartService.cartCount$.subscribe(count => this.cartCount = count);
   }
 
   ngAfterViewInit(): void { }
 
-  ngOnDestroy(): void { }
+  ngOnDestroy(): void {
+    this.cartSub?.unsubscribe();
+  }
 
   // ── Scroll listener ───────────────────────────────────────
   @HostListener('window:scroll')

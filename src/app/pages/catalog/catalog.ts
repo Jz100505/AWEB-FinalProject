@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { CartService } from '../../services/cart.service';
 
 // ── Shared interface — also imported by product-detail ──────────────────────
 export interface CatalogProduct {
@@ -238,6 +239,7 @@ export class Catalog implements OnInit, OnDestroy {
   constructor(
     public router: Router,
     private http: HttpClient,
+    private cartService: CartService,
   ) { }
 
   ngOnInit(): void { this.fetchProducts(); }
@@ -384,6 +386,22 @@ export class Catalog implements OnInit, OnDestroy {
   // ── Cart ──────────────────────────────────────────────────
   addToCart(product: CatalogProduct, event: MouseEvent): void {
     event.stopPropagation();
+
+    // Use the first available size for catalog cards (no size picker on this page).
+    // Falls back to empty string so the cart can still track the line item.
+    const size = this.getSizes(product)[0] ?? '';
+
+    this.cartService.addItem({
+      _id: product._id,
+      name: product.name,
+      price: product.price,
+      image: this.getProductImage(product),
+      category: product.category,
+      condition: product.condition,
+      size,
+      stock: product.stock,
+    });
+
     this.toastMessage = `${product.name} added to cart!`;
     this.showToast = true;
     clearTimeout(this.toastTimer);
