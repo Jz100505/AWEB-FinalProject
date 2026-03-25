@@ -5,8 +5,6 @@
 
 <div class="pd-page">
 
-
-
     <!-- ── NOT FOUND ───────────────────────────────────────────── -->
     @if (notFound) {
     <div class="pd-notfound">
@@ -69,44 +67,89 @@
 
                 <div class="pd-detail__divider"></div>
 
-                <!-- Description -->
+                <!-- Description — text-align: justify for clean editorial look -->
+                @if (product.description) {
                 <p class="pd-detail__desc">{{ product.description }}</p>
+                }
 
-                <!-- Size selector -->
-                @if (getSizes().length > 0) {
+                <!-- Size selector — full XS → XXL range -->
                 <div class="pd-size-section">
-                    <span class="pd-size-label">
-                        Size
-                        @if (selectedSize) {
-                        — <strong>{{ selectedSize }}</strong>
-                        }
-                    </span>
+                    <div class="pd-size-label-row">
+                        <span class="pd-size-label">
+                            Size
+                            @if (selectedSize) {
+                            — <strong>{{ selectedSize }}</strong>
+                            } @else {
+                            <span class="pd-size-hint">— Select a size</span>
+                            }
+                        </span>
+                    </div>
                     <div class="pd-size-chips">
-                        @for (size of getSizes(); track size) {
+                        @for (size of allSizes; track size) {
                         <button class="pd-size-chip" [class.pd-size-chip--active]="selectedSize === size"
-                            (click)="selectSize(size)" [attr.aria-pressed]="selectedSize === size"
-                            [attr.aria-label]="'Select size ' + size" type="button">
+                            [class.pd-size-chip--unavailable]="!isSizeAvailable(size)"
+                            (click)="isSizeAvailable(size) && selectSize(size)" [disabled]="!isSizeAvailable(size)"
+                            [attr.aria-pressed]="selectedSize === size"
+                            [attr.aria-label]="'Size ' + size + (isSizeAvailable(size) ? '' : ' — unavailable')"
+                            [title]="isSizeAvailable(size) ? 'Size ' + size : size + ' — not available for this item'"
+                            type="button">
                             {{ size }}
                         </button>
                         }
                     </div>
-                </div>
-                }
-
-                <!-- Stock indicator -->
-                <div class="pd-stock">
-                    @if (product.stock > 0) {
-                    <span class="pd-stock__dot pd-stock__dot--in" aria-hidden="true"></span>
-                    <span class="pd-stock__text pd-stock__text--in">In Stock — {{ product.stock }} left</span>
-                    } @else {
-                    <span class="pd-stock__dot pd-stock__dot--out" aria-hidden="true"></span>
-                    <span class="pd-stock__text pd-stock__text--out">Out of Stock</span>
+                    @if (!selectedSize && product.stock > 0) {
+                    <p class="pd-size-warning">Please select a size to continue.</p>
                     }
                 </div>
 
-                <!-- Add to Cart -->
-                <button class="pd-cta" [class.pd-cta--added]="addedToCart" [disabled]="product.stock === 0"
-                    (click)="addToCart()"
+                <!-- Stock + Quantity row -->
+                <div class="pd-stock-qty-row">
+
+                    <!-- Stock indicator -->
+                    <div class="pd-stock">
+                        @if (product.stock > 0) {
+                        <span class="pd-stock__dot pd-stock__dot--in" aria-hidden="true"></span>
+                        <span class="pd-stock__text pd-stock__text--in">
+                            @if (product.stock <= 3) { <strong>Only {{ product.stock }} left!</strong>
+                                } @else if (product.stock <= 10) { In Stock — {{ product.stock }} left } @else { In
+                                    Stock } </span>
+                                    } @else {
+                                    <span class="pd-stock__dot pd-stock__dot--out" aria-hidden="true"></span>
+                                    <span class="pd-stock__text pd-stock__text--out">Out of Stock</span>
+                                    }
+                    </div>
+
+                    <!-- Quantity selector (visible only when in stock) -->
+                    @if (product.stock > 0) {
+                    <div class="pd-qty-wrap" role="group" aria-label="Quantity">
+                        <span class="pd-qty-label">Qty</span>
+                        <div class="pd-qty-control">
+                            <button class="pd-qty-btn" (click)="decrementQty()" [disabled]="quantity <= 1"
+                                aria-label="Decrease quantity" type="button">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" aria-hidden="true">
+                                    <line x1="5" y1="12" x2="19" y2="12" />
+                                </svg>
+                            </button>
+                            <span class="pd-qty-value" aria-live="polite">{{ quantity }}</span>
+                            <button class="pd-qty-btn" (click)="incrementQty()"
+                                [disabled]="quantity >= maxQtyPerOrder || quantity >= product.stock"
+                                aria-label="Increase quantity" type="button">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" aria-hidden="true">
+                                    <line x1="12" y1="5" x2="12" y2="19" />
+                                    <line x1="5" y1="12" x2="19" y2="12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    }
+
+                </div>
+
+                <!-- Add to Cart CTA -->
+                <button class="pd-cta" [class.pd-cta--added]="addedToCart"
+                    [disabled]="product.stock === 0 || !selectedSize" (click)="addToCart()"
                     [attr.aria-label]="product.stock === 0 ? 'Out of stock' : 'Add ' + product.name + ' to cart'"
                     type="button">
 
@@ -118,6 +161,14 @@
                     Added to Cart!
                     } @else if (product.stock === 0) {
                     Unavailable
+                    } @else if (!selectedSize) {
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        aria-hidden="true">
+                        <circle cx="9" cy="21" r="1" />
+                        <circle cx="20" cy="21" r="1" />
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                    </svg>
+                    Select a Size First
                     } @else {
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         aria-hidden="true">
@@ -125,7 +176,8 @@
                         <circle cx="20" cy="21" r="1" />
                         <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
                     </svg>
-                    Add to Cart — {{ formatPrice(product.price) }}
+                    Add{{ quantity > 1 ? ' ' + quantity + 'x' : '' }} to Cart — {{ formatPrice(product.price * quantity)
+                    }}
                     }
                 </button>
 
