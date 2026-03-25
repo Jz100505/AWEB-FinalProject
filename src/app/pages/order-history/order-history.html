@@ -1,1 +1,288 @@
-<p>order-history works!</p>
+<!-- ================================================================
+     THRIFTHUB — ORDER HISTORY PAGE
+     Sections: Hero → Filter Bar → Order List (expandable cards) → Empty → Toast
+     ================================================================ -->
+
+<div class="oh-page">
+
+    <!-- ── HERO ──────────────────────────────────────────────────── -->
+    <header class="oh-hero" aria-label="Order history header">
+        <div class="oh-hero__grain" aria-hidden="true"></div>
+
+        <div class="oh-hero__inner oh-container">
+
+            <!-- Breadcrumb -->
+            <nav class="oh-breadcrumb" aria-label="Breadcrumb">
+                <a routerLink="/home" class="oh-breadcrumb__link">Home</a>
+                <span class="oh-breadcrumb__sep" aria-hidden="true">›</span>
+                <a routerLink="/profile" class="oh-breadcrumb__link">Profile</a>
+                <span class="oh-breadcrumb__sep" aria-hidden="true">›</span>
+                <span class="oh-breadcrumb__current" aria-current="page">Orders</span>
+            </nav>
+
+            <div class="oh-hero__title-row">
+                <h1 class="oh-hero__title">
+                    MY<br>
+                    <span>ORDERS.</span>
+                </h1>
+
+                <!-- Stats badges -->
+                <div class="oh-hero__stats" aria-label="Order statistics">
+                    <div class="oh-hero__stat">
+                        <span class="oh-hero__stat-num">{{ totalOrders }}</span>
+                        <span class="oh-hero__stat-label">Total Orders</span>
+                    </div>
+                    <div class="oh-hero__stat">
+                        <span class="oh-hero__stat-num">{{ formatPrice(totalSpent) }}</span>
+                        <span class="oh-hero__stat-label">Total Spent</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- ── FILTER BAR ─────────────────────────────────────────────── -->
+    <div class="oh-filter-bar" role="navigation" aria-label="Filter orders">
+        <div class="oh-filter-bar__inner oh-container">
+
+            <div class="oh-pills" role="group" aria-label="Filter by status">
+                <button class="oh-pill" [class.oh-pill--active]="activeFilter === 'all'" (click)="setFilter('all')"
+                    type="button">
+                    All
+                </button>
+                <button class="oh-pill" [class.oh-pill--active]="activeFilter === 'confirmed'"
+                    (click)="setFilter('confirmed')" type="button">
+                    <span class="oh-pill__dot oh-pill__dot--confirmed" aria-hidden="true"></span>
+                    Confirmed
+                </button>
+                <button class="oh-pill" [class.oh-pill--active]="activeFilter === 'shipped'"
+                    (click)="setFilter('shipped')" type="button">
+                    <span class="oh-pill__dot oh-pill__dot--shipped" aria-hidden="true"></span>
+                    Shipped
+                </button>
+                <button class="oh-pill" [class.oh-pill--active]="activeFilter === 'delivered'"
+                    (click)="setFilter('delivered')" type="button">
+                    <span class="oh-pill__dot oh-pill__dot--delivered" aria-hidden="true"></span>
+                    Delivered
+                </button>
+                <button class="oh-pill" [class.oh-pill--active]="activeFilter === 'cancelled'"
+                    (click)="setFilter('cancelled')" type="button">
+                    <span class="oh-pill__dot oh-pill__dot--cancelled" aria-hidden="true"></span>
+                    Cancelled
+                </button>
+            </div>
+
+            <span class="oh-filter-count" aria-live="polite">
+                Showing <strong>{{ filteredOrders.length }}</strong> of <strong>{{ orders.length }}</strong> orders
+            </span>
+
+        </div>
+    </div>
+
+    <!-- ── ORDER LIST ─────────────────────────────────────────────── -->
+    <div class="oh-body">
+        <div class="oh-container">
+
+            <!-- Orders exist -->
+            @if (filteredOrders.length > 0) {
+            <div class="oh-list" role="list" aria-label="Your orders">
+
+                @for (order of filteredOrders; track order.id) {
+                <div class="oh-card" [class.oh-card--expanded]="isExpanded(order.id)" role="listitem">
+
+                    <!-- ── CARD HEADER ── -->
+                    <button class="oh-card__header" (click)="toggleOrder(order.id)"
+                        [attr.aria-expanded]="isExpanded(order.id)" [attr.aria-controls]="'order-body-' + order.id"
+                        type="button">
+
+                        <!-- Order ID + Date -->
+                        <div class="oh-card__id-block">
+                            <span class="oh-card__id">{{ order.id }}</span>
+                            <span class="oh-card__date">{{ formatDate(order.date) }}</span>
+                        </div>
+
+                        <!-- Item thumbnails preview -->
+                        <div class="oh-card__thumbs" aria-hidden="true">
+                            @for (item of order.items.slice(0, 3); track item.name; let idx = $index) {
+                            @if (idx
+                            < 2) { <img [src]="item.image" [alt]="item.name" class="oh-card__thumb" loading="lazy" />
+                            } @else if (idx === 2 && order.items.length > 3) {
+                            <div class="oh-card__thumb-more">+{{ order.items.length - 2 }}</div>
+                            } @else {
+                            <img [src]="item.image" [alt]="item.name" class="oh-card__thumb" loading="lazy" />
+                            }
+                            }
+                        </div>
+
+                        <!-- Status + total + chevron -->
+                        <div class="oh-card__right">
+
+                            <span class="oh-status oh-status--{{ order.status }}"
+                                [attr.aria-label]="'Status: ' + getStatusLabel(order.status)">
+                                <span class="oh-status__dot" aria-hidden="true"></span>
+                                {{ getStatusLabel(order.status) }}
+                            </span>
+
+                            <span class="oh-card__total">{{ formatPrice(order.total) }}</span>
+
+                            <div class="oh-card__chevron" aria-hidden="true">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" stroke-linecap="round">
+                                    <path d="M6 9l6 6 6-6" />
+                                </svg>
+                            </div>
+
+                        </div>
+                    </button>
+
+                    <!-- ── EXPANDED BODY ── -->
+                    @if (isExpanded(order.id)) {
+                    <div class="oh-card__body" [id]="'order-body-' + order.id" role="region"
+                        [attr.aria-label]="'Order ' + order.id + ' details'">
+                        <div class="oh-card__body-inner">
+
+                            <!-- Items list -->
+                            <div class="oh-card__items">
+                                <p class="oh-card__items-title">Items ({{ order.items.length }})</p>
+
+                                @for (item of order.items; track item.name) {
+                                <div class="oh-item">
+                                    <img [src]="item.image" [alt]="item.name" class="oh-item__img" loading="lazy" />
+                                    <div class="oh-item__info">
+                                        <div class="oh-item__category">{{ item.category }}</div>
+                                        <div class="oh-item__name">{{ item.name }}</div>
+                                        <div class="oh-item__meta">
+                                            <span class="oh-size-chip">{{ item.size }}</span>
+                                            <span class="oh-qty-chip">× {{ item.quantity }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="oh-item__price">{{ formatPrice(item.price * item.quantity) }}</div>
+                                </div>
+                                }
+                            </div>
+
+                            <!-- Summary + address -->
+                            <div class="oh-card__summary">
+                                <p class="oh-card__summary-title">Summary</p>
+
+                                <div class="oh-summary-row">
+                                    <span>Subtotal</span>
+                                    <span>{{ formatPrice(getSubtotal(order)) }}</span>
+                                </div>
+                                <div class="oh-summary-row" [class.oh-summary-row--free]="getShipping(order) === 0">
+                                    <span>Shipping</span>
+                                    <span>{{ getShipping(order) === 0 ? 'FREE' : formatPrice(getShipping(order))
+                                        }}</span>
+                                </div>
+
+                                <div class="oh-summary-total">
+                                    <span class="oh-summary-total__label">Total</span>
+                                    <span class="oh-summary-total__amount">{{ formatPrice(order.total) }}</span>
+                                </div>
+
+                                <!-- Shipping address (if present) -->
+                                @if (order.shippingAddress) {
+                                <div class="oh-card__addr">
+                                    <div class="oh-card__addr-label">Shipped To</div>
+                                    <div class="oh-card__addr-text">
+                                        {{ order.shippingAddress.fullName }}<br>
+                                        {{ order.shippingAddress.address }}<br>
+                                        {{ order.shippingAddress.city }}, {{ order.shippingAddress.postalCode }}
+                                    </div>
+                                </div>
+                                }
+                            </div>
+
+                        </div>
+
+                        <!-- Card action row -->
+                        <div class="oh-card__footer">
+                            @if (order.status !== 'cancelled') {
+                            <button class="oh-card__action oh-card__action--ghost" (click)="reorder(order)"
+                                type="button" [attr.aria-label]="'Reorder items from ' + order.id">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+                                    <polyline points="23 4 23 10 17 10" />
+                                    <polyline points="1 20 1 14 7 14" />
+                                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                                </svg>
+                                <span>Reorder</span>
+                            </button>
+                            }
+                            <a [routerLink]="['/product']" class="oh-card__action oh-card__action--primary"
+                                [attr.aria-label]="'View details for order ' + order.id">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                </svg>
+                                <span>View Details</span>
+                            </a>
+                        </div>
+
+                    </div>
+                    }
+
+                </div>
+                }
+
+            </div>
+            }
+
+            <!-- ── EMPTY STATE: no orders at all ─────────────────── -->
+            @if (orders.length === 0) {
+            <div class="oh-empty" role="status">
+                <div class="oh-empty__icon" aria-hidden="true">
+                    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"
+                        stroke-linecap="round">
+                        <path d="M9 11l3 3L22 4" />
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                    </svg>
+                </div>
+                <h2 class="oh-empty__title">No Orders Yet</h2>
+                <p class="oh-empty__sub">
+                    Your order history is empty.<br>Time to find your first thrift fit!
+                </p>
+                <a routerLink="/catalog" class="oh-btn oh-btn--primary">
+                    Browse the Shop
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" aria-hidden="true">
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                </a>
+            </div>
+            }
+
+            <!-- ── EMPTY STATE: no results for filter ────────────── -->
+            @if (orders.length > 0 && filteredOrders.length === 0) {
+            <div class="oh-empty" role="status">
+                <div class="oh-empty__icon" aria-hidden="true">
+                    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"
+                        stroke-linecap="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                        <line x1="8" y1="11" x2="14" y2="11" />
+                    </svg>
+                </div>
+                <h2 class="oh-empty__title">No {{ activeFilter | titlecase }} Orders</h2>
+                <p class="oh-empty__sub">You have no orders with this status.</p>
+                <button class="oh-btn oh-btn--primary" (click)="setFilter('all')" type="button">
+                    Show All Orders
+                </button>
+            </div>
+            }
+
+        </div>
+    </div>
+
+    <!-- ── TOAST ─────────────────────────────────────────────────── -->
+    <div class="oh-toast" [class.oh-toast--show]="showToast" role="status" aria-live="polite">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            aria-hidden="true">
+            <path d="M20 6L9 17l-5-5" />
+        </svg>
+        {{ toastMessage }}
+    </div>
+
+</div>
