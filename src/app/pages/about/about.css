@@ -136,11 +136,12 @@
 ═══════════════════════════════════════════════════════════ */
 .ab-hero {
     position: relative;
-    min-height: 100svh;
+    height: 72vh;
+    min-height: 520px;
     display: flex;
-    align-items: flex-end;
+    align-items: flex-start;
+    padding-top: clamp(110px, 12vh, 140px);
     overflow: hidden;
-    padding-bottom: clamp(60px, 8vw, 100px);
 }
 
 .ab-hero__bg {

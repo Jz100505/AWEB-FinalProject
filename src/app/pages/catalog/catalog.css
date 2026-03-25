@@ -38,7 +38,8 @@
     height: 72vh;
     min-height: 520px;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
+    padding-top: clamp(110px, 12vh, 140px);
     overflow: hidden;
 }
 
